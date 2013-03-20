@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from lib.bot import Client
+from lib.client import Client
 
 
 def main():
