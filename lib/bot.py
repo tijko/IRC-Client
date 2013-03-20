@@ -1,10 +1,5 @@
 #!/usr/bin/env python
 
-#'irc.freenode.net', 6667
-# make a.i. to do response -- markov-chain
-# reconnect on time out?
-# handle nick in use ... ??? 
-
 import socket
 from threading import Thread
 
@@ -19,14 +14,13 @@ class Chat(Thread):
         while True:
             msg = raw_input('')
             if msg:
-                # check for commands
                 if msg[0] == '/':
                     pass
                 else:
                     msg = 'privmsg #%s :'  % self.channel + msg + '\r\n'
                     self.conn.sendall(msg)
 
-# most of the IRC-commands work --> 'ME'? 
+
 class Client(object):
     
     def __init__(self, **kwargs):
@@ -65,9 +59,6 @@ class Client(object):
             pass
         else:
             print '%s | %s' % (user[0][1:], ' '.join([i for i in back])[1:-2])
-#        print 'COMMAND == %s' % cmd
-#        print 'CHANNEL == %s' % channel
-        # check if Bot msg'd itself --> infinite loop
         if channel == self.nick and user[0][1:] in join:     
             self.client.sendall(('PRIVMSG %s :keep it in the open' % 
                                   user[0][1:]) + '\r\n')
