@@ -35,7 +35,7 @@ class Client(object):
         self.namedata = 'NAMES #%s\r\n' % channel
 
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.client.connect((host, port))
+        self.client.connect((self.host, port))
 
         self.client.sendall(nickdata)
         self.client.sendall(userdata)
@@ -50,13 +50,13 @@ class Client(object):
                 if len(self.recv_msg) > 2:
                     self.msg_handle()                    
         
-    def msg_handle(self, join='', userlist=None):
+    def msg_handle(self, join='', userlist=None, conn=None):
         user, cmd, channel = self.recv_msg[:3]
         back = self.recv_msg[3:]
         user = user.split('!')[:1]
-        if user[0][1:].endswith('.freenode.net'):
+        if user[0][1:].endswith('.freenode.net') and not conn:
             print 'SUCCESSFULLY CONNECTED TO %s' % self.host
-            pass
+            conn = 1
         else:
             print '%s | %s' % (user[0][1:], ' '.join([i for i in back])[1:-2])
         if channel == self.nick and user[0][1:] in join:     
