@@ -30,7 +30,7 @@ class Client(object):
         self.nick = kwargs['nick']
         self.host = kwargs['host']
         nickdata = 'NICK %s\r\n' % self.nick
-        userdata = 'USER %s %s bla :%s\r\n' % (self.nick, self.host, user)
+        userdata = 'USER %s %s servername :%s\r\n' % (self.nick, self.host, user)
         joindata = 'JOIN #%s\r\n' % channel
         self.namedata = 'NAMES #%s\r\n' % channel
 
