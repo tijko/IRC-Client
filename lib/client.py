@@ -58,7 +58,6 @@ class Client(object):
         user, cmd, channel = self.recv_msg[:3]
         back = self.recv_msg[3:]
         user = user.split('!')[:1]
-    # check message for "ping" --> respond with "pong"
         if user[0][1:].endswith('.freenode.net') and not self.conn:
             print 'SUCCESSFULLY CONNECTED TO %s' % self.host
             self.conn = 1
