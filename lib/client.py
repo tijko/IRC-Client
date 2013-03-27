@@ -48,6 +48,9 @@ class Client(object):
             self.data = self.client.recvfrom(1024)
             if self.data:
                 self.recv_msg = tuple(self.data[0].split(' '))
+                if self.recv_msg[0] == 'PING':
+                    self.client.sendall('PONG ' + self.recv_msg[1] + '\r\n')
+                    print 'sent pong'
                 if len(self.recv_msg) > 2:
                     self.msg_handle()                    
         
@@ -55,6 +58,7 @@ class Client(object):
         user, cmd, channel = self.recv_msg[:3]
         back = self.recv_msg[3:]
         user = user.split('!')[:1]
+    # check message for "ping" --> respond with "pong"
         if user[0][1:].endswith('.freenode.net') and not self.conn:
             print 'SUCCESSFULLY CONNECTED TO %s' % self.host
             self.conn = 1
