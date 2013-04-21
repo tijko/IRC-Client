@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import socket
+import time
 from threading import Thread
 
 
@@ -22,8 +23,11 @@ class Chat(Thread):
             if msg:
                 if msg[0] == '/':
                     msg = msg.split()
-                    command = self.commands[msg[0][1:].lower()]
-                    command(msg[1] + '\r\n')
+                    try:
+                        command = self.commands[msg[0][1:].lower()]
+                        command(msg[1] + '\r\n')
+                    except KeyError:
+                        print 'Server | Unknown Command!'
                 else:
                     msg = 'privmsg #%s :'  % self.channel + msg + '\r\n'
                     self.conn.sendall(msg)
@@ -43,8 +47,11 @@ class Client(object):
         self.namedata = 'NAMES #%s\r\n' % channel
 
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.client.connect((self.host, port))
-
+        try:
+            self.client.connect((self.host, port))
+        except socket.error:
+            print 'Connection Failed! --> check host & port'
+            return
         self.client.sendall(nickdata)
         self.client.sendall(userdata)
         self.client.sendall(joindata)
@@ -52,31 +59,47 @@ class Client(object):
 
         Thread.start(Chat(self.client, channel))
         self.conn = None
+
+        self.server_reply = {'311':self.whois_user, '319':self.whois_chan}
+
         while True:
             self.data = self.client.recvfrom(1024)
             if self.data:
                 self.recv_msg = tuple(self.data[0].split())
                 if self.recv_msg[0] == 'PING':
                     self.client.sendall('PONG ' + self.recv_msg[1] + '\r\n')
-                    print 'sent pong'
+                    print 'Channel Ping @ ==> %s' % time.ctime()
                 else: 
-                    self.msg_handle()                    
+                    if len(self.recv_msg) >= 3:
+                        self.msg_handle()                    
+
+    def whois_user(self, user_data):
+        server_repl = 'User: %s' % (user_data[1] + '@' + user_data[2])
+        print server_repl
+
+    def whois_chan(self, chan_data):
+        server_repl = 'Real Name: %s \nServer: %s' % (chan_data[0], chan_data[2].strip(':')) 
+        print server_repl
         
     def msg_handle(self, join='', userlist=None):
-        user, cmd, channel = self.recv_msg[:3]
+        user, cmd, channel = self.recv_msg[:3]  
         back = self.recv_msg[3:]
-        user = user.split('!')[:1]
-        if user[0][1:].endswith('.freenode.net') and not self.conn:
-            print 'SUCCESSFULLY CONNECTED TO %s' % self.host
+        user = user.split('!')[0].strip(':')
+        if user.endswith('.freenode.net') and not self.conn:
+            print '\nSUCCESSFULLY CONNECTED TO %s' % self.host
+            self.server = user
             self.conn = 1
-        else:
-            print '%s | %s' % (user[0][1:], ' '.join([i for i in back])[1:-2])
-        if channel == self.nick and user[0][1:] in join:     
-            self.client.sendall(('PRIVMSG %s :keep it in the open' % 
-                                  user[0][1:]) + '\r\n')
+        elif user.endswith('.freenode.net') and self.conn:
+            try:
+                reply = self.server_reply[cmd]
+                reply(back)
+            except KeyError:
+                pass 
+        if cmd == 'PRIVMSG':
+            print '%s | %s' % (user, ' '.join(i for i in back).strip(':')) 
         if cmd == 'JOIN':
             if not userlist:
                 self.client.sendall(self.namedata)
                 userlist = 1
-                print 'SUCCESFULLY JOINED %s' % channel
+                print 'SUCCESFULLY JOINED %s\n' % channel
 
