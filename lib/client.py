@@ -3,23 +3,31 @@
 import socket
 from threading import Thread
 
+
 class Chat(Thread):
 
     def __init__(self, conn, channel):
         self.conn = conn
         self.channel = channel
+        self.commands = {'whois':self.whois}
         super(Chat, self).__init__()
+
+    def whois(self, query):
+        query = 'WHOIS ' + query
+        self.conn.sendall(query)
 
     def run(self):
         while True:
             msg = raw_input('')
             if msg:
                 if msg[0] == '/':
-                    pass
+                    msg = msg.split()
+                    command = self.commands[msg[0][1:].lower()]
+                    command(msg[1] + '\r\n')
                 else:
                     msg = 'privmsg #%s :'  % self.channel + msg + '\r\n'
                     self.conn.sendall(msg)
-
+                   
 
 class Client(object):
     
@@ -47,11 +55,11 @@ class Client(object):
         while True:
             self.data = self.client.recvfrom(1024)
             if self.data:
-                self.recv_msg = tuple(self.data[0].split(' '))
+                self.recv_msg = tuple(self.data[0].split())
                 if self.recv_msg[0] == 'PING':
                     self.client.sendall('PONG ' + self.recv_msg[1] + '\r\n')
                     print 'sent pong'
-                if len(self.recv_msg) > 2:
+                else: 
                     self.msg_handle()                    
         
     def msg_handle(self, join='', userlist=None):
