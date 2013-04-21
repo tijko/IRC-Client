@@ -4,6 +4,7 @@ from lib.client import Client
 
 
 def main():
+    print '=' * 40
     user = raw_input('Username: ')
     nick = raw_input('Nickname: ')
     host = raw_input('Host: ')
