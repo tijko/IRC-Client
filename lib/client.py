@@ -10,16 +10,35 @@ class Chat(Thread):
     def __init__(self, conn, channel):
         self.conn = conn
         self.channel = channel
-        self.commands = {'names':self._names, 'whois':self._whois}
+        self.commands = {'names':self._names, 'whois':self._whois, 'help':self._help}
         super(Chat, self).__init__()
 
     def _names(self, chan):
+        '''Usage: /NAMES [<channel>] --> List all nicks visible on channel''' 
         query = 'NAMES %s' % chan
         self.conn.sendall(query)
 
     def _whois(self, query):
+        '''Usage: /WHOIS [<server>] <nickmask> --> Query information about a user.'''
         query = 'WHOIS ' + query
         self.conn.sendall(query)
+
+    def _help(self, cmd=None):
+        '''Usage: /HELP [<command>] --> Show help information for/on valid commands'''
+        if not cmd:
+            print 'Commands:' 
+            all_commands = '< '
+            for c in self.commands.keys():
+                all_commands += (c.upper() + '  ')
+            all_commands += '>\n'
+            print all_commands
+        else:
+            try:
+                func_info = cmd.lower() 
+                print self.commands[func_info].__doc__
+            except KeyError:
+                print 'Server | Unknown Command!'
+                print 'Type /HELP for list of commands\n'
 
     def run(self):
         while True:
@@ -29,9 +48,19 @@ class Chat(Thread):
                     msg = msg.split()
                     try:
                         command = self.commands[msg[0][1:].lower()]
-                        command(msg[1] + '\r\n')
+                        if msg[0][1:].lower() == 'help':
+                            if len(msg) > 1:
+                                command(msg[1])
+                            else:
+                                command()
+                        elif len(msg) < 2:
+                            print command.func_doc
+                        else:
+                            command(msg[1] + '\r\n')
                     except KeyError:
                         print 'Server | Unknown Command!'
+                        print 'Type /HELP for list of commands'
+                        print 'or /HELP <command> for information on a valid command\n'
                 else:
                     msg = 'privmsg #%s :'  % self.channel + msg + '\r\n'
                     self.conn.sendall(msg)
