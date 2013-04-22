@@ -10,10 +10,14 @@ class Chat(Thread):
     def __init__(self, conn, channel):
         self.conn = conn
         self.channel = channel
-        self.commands = {'whois':self.whois}
+        self.commands = {'names':self._names, 'whois':self._whois}
         super(Chat, self).__init__()
 
-    def whois(self, query):
+    def _names(self, chan):
+        query = 'NAMES %s' % chan
+        self.conn.sendall(query)
+
+    def _whois(self, query):
         query = 'WHOIS ' + query
         self.conn.sendall(query)
 
@@ -60,7 +64,8 @@ class Client(object):
         Thread.start(Chat(self.client, channel))
         self.conn = None
 
-        self.server_reply = {'311':self.whois_user, '319':self.whois_chan}
+        self.server_reply = {'311':self.whois_user_repl, '319':self.whois_chan_repl, 
+                             '353':self.names_repl}
 
         while True:
             self.data = self.client.recvfrom(1024)
@@ -68,18 +73,27 @@ class Client(object):
                 self.recv_msg = tuple(self.data[0].split())
                 if self.recv_msg[0] == 'PING':
                     self.client.sendall('PONG ' + self.recv_msg[1] + '\r\n')
-                    print 'Channel Ping @ ==> %s' % time.ctime()
+                    print 'Channel Ping@ ==> %s' % time.ctime()
                 else: 
                     if len(self.recv_msg) >= 3:
                         self.msg_handle()                    
 
-    def whois_user(self, user_data):
+    def whois_user_repl(self, user_data):
         server_repl = 'User: %s' % (user_data[1] + '@' + user_data[2])
-        print server_repl
+        print server_repl 
 
-    def whois_chan(self, chan_data):
+    def whois_chan_repl(self, chan_data):
         server_repl = 'Real Name: %s \nServer: %s' % (chan_data[0], chan_data[2].strip(':')) 
-        print server_repl
+        print server_repl + '\n'
+    
+    def names_repl(self, userlist):
+        if any(i.endswith('.freenode.net') for i in userlist[2:]):
+            pass
+        else:
+            server_repl = ('Users available on %s:\n' + '=' * 25 + '\n') % userlist[1]
+            for usr in userlist[2:]:
+                server_repl += ('  ~' + usr.strip(':@') + '\n')
+            print server_repl 
         
     def msg_handle(self, join='', userlist=None):
         user, cmd, channel = self.recv_msg[:3]  
