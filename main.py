@@ -13,6 +13,7 @@ def main():
             port = int(raw_input('Port: '))
             break
         except ValueError:
+            print 'Port must be an integer!'
             pass
     channel = raw_input('Channel: ')
     Client(user=user, nick=nick, host=host, port=port, channel=channel)
