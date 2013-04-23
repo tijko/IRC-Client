@@ -34,6 +34,7 @@ class Chat(Thread):
             print all_commands
         else:
             try:
+                cmd = cmd.strip('\r\n') 
                 func_info = cmd.lower() 
                 print self.commands[func_info].__doc__
             except KeyError:
@@ -46,18 +47,17 @@ class Chat(Thread):
             if msg:
                 if msg[0] == '/':
                     msg = msg.split()
-                    try:
-                        command = self.commands[msg[0][1:].lower()]
-                        if msg[0][1:].lower() == 'help':
-                            if len(msg) > 1:
-                                command(msg[1])
-                            else:
-                                command()
+                    msg_cmd = msg[0][1:].lower()
+                    command = self.commands.get(msg_cmd)
+                    if command:
+                        if msg_cmd == 'help':
+                            msg.append(None)
+                            command(msg[1])
                         elif len(msg) < 2:
                             print command.func_doc
                         else:
                             command(msg[1] + '\r\n')
-                    except KeyError:
+                    else:
                         print 'Server | Unknown Command!'
                         print 'Type /HELP for list of commands'
                         print 'or /HELP <command> for information on a valid command\n'
