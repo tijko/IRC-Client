@@ -1,3 +1,4 @@
+# --*-- coding: utf-8 --*--
 #!/usr/bin/env python
 
 import socket
@@ -7,14 +8,16 @@ from threading import Thread
 
 class Chat(Thread):
 
-    def __init__(self, conn, channel):
+    def __init__(self, conn, server, channel):
         self.conn = conn
+        self.server = server
         self.channel = channel
-        self.commands = {'names':self._names, 'whois':self._whois, 'help':self._help}
+        self.commands = {'names':self._names, 'whois':self._whois, 
+                         'info':self._info, 'help':self._help}
         super(Chat, self).__init__()
 
     def _names(self, chan):
-        '''Usage: /NAMES [<channel>] --> List all nicks visible on channel''' 
+        '''Usage: /NAMES [<channel>] --> List all nicks visible on channel.''' 
         query = 'NAMES %s' % chan
         self.conn.sendall(query)
 
@@ -23,8 +26,17 @@ class Chat(Thread):
         query = 'WHOIS ' + query
         self.conn.sendall(query)
 
+    def _info(self, srv=None):
+        '''Usage: /INFO (optional [<server>]) --> Returns information that describes the server, optional parameter defaults to current server.'''
+        if srv is None:
+            query = 'INFO %s' % (self.server + '\r\n')
+            self.conn.sendall(query)
+        else:
+            query = 'INFO %s' % (srv + '\r\n')
+            self.conn.sendall(query)
+
     def _help(self, cmd=None):
-        '''Usage: /HELP [<command>] --> Show help information for/on valid commands'''
+        '''Usage: /HELP [<command>] --> Show help information for/on valid commands.'''
         if not cmd:
             print 'Commands:' 
             all_commands = '< '
@@ -50,7 +62,7 @@ class Chat(Thread):
                     msg_cmd = msg[0][1:].lower()
                     command = self.commands.get(msg_cmd)
                     if command:
-                        if msg_cmd == 'help':
+                        if msg_cmd == 'help' or msg_cmd == 'info':
                             msg.append(None)
                             command(msg[1])
                         elif len(msg) < 2:
@@ -71,13 +83,13 @@ class Client(object):
     def __init__(self, **kwargs):
         user = kwargs['user']
         port = kwargs['port']
-        channel = kwargs['channel']
+        self.channel = kwargs['channel']
         self.nick = kwargs['nick']
         self.host = kwargs['host']
         nickdata = 'NICK %s\r\n' % self.nick
         userdata = 'USER %s %s servername :%s\r\n' % (self.nick, self.host, user)
-        joindata = 'JOIN #%s\r\n' % channel
-        self.namedata = 'NAMES #%s\r\n' % channel
+        joindata = 'JOIN #%s\r\n' % self.channel
+        self.namedata = 'NAMES #%s\r\n' % self.channel
 
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
@@ -89,12 +101,10 @@ class Client(object):
         self.client.sendall(userdata)
         self.client.sendall(joindata)
         self.client.sendall(self.namedata)
-
-        Thread.start(Chat(self.client, channel))
         self.conn = None
 
         self.server_reply = {'311':self.whois_user_repl, '319':self.whois_chan_repl, 
-                             '353':self.names_repl}
+                             '353':self.names_repl,      '371':self.info_repl}
 
         while True:
             self.data = self.client.recvfrom(1024)
@@ -112,7 +122,8 @@ class Client(object):
         print server_repl 
 
     def whois_chan_repl(self, chan_data):
-        server_repl = 'Real Name: %s \nServer: %s' % (chan_data[0], chan_data[2].strip(':')) 
+        server_repl = ('Real Name: %s \nServer: %s' % 
+                      (chan_data[0], chan_data[2].strip(':'))) 
         print server_repl + '\n'
     
     def names_repl(self, userlist):
@@ -123,6 +134,17 @@ class Client(object):
             for usr in userlist[2:]:
                 server_repl += ('  ~' + usr.strip(':@') + '\n')
             print server_repl 
+    
+    def info_repl(self, server_data):
+        skips = [self.server, self.nick, ':', '371', (':' + self.server)]
+        if len(server_data) > 2:
+            server_data = ' '.join(i for i in server_data if i not in skips).split(' :')
+            for i in server_data:
+                if '.freenode.net' in i and i[:3] != 'irc':
+                    pass
+                elif len(i) > 1:
+                    print i.strip(':')         
+            print '\n'
         
     def msg_handle(self, join='', userlist=None):
         user, cmd, channel = self.recv_msg[:3]  
@@ -131,6 +153,7 @@ class Client(object):
         if user.endswith('.freenode.net') and not self.conn:
             print '\nSUCCESSFULLY CONNECTED TO %s' % self.host
             self.server = user
+            Thread.start(Chat(self.client, self.server, self.channel))
             self.conn = 1
         elif user.endswith('.freenode.net') and self.conn:
             try:
@@ -141,7 +164,7 @@ class Client(object):
         if cmd == 'PRIVMSG':
             print '%s | %s' % (user, ' '.join(i for i in back).strip(':')) 
         if cmd == 'JOIN':
-            if not userlist:
+            if not userlist: 
                 self.client.sendall(self.namedata)
                 userlist = 1
                 print 'SUCCESFULLY JOINED %s\n' % channel
