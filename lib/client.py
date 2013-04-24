@@ -13,7 +13,8 @@ class Chat(Thread):
         self.server = server
         self.channel = channel
         self.commands = {'names':self._names, 'whois':self._whois, 
-                         'info':self._info, 'help':self._help}
+                         'info':self._info, 'help':self._help,
+                         'links':self._links}
         super(Chat, self).__init__()
 
     def _names(self, chan):
@@ -33,6 +34,15 @@ class Chat(Thread):
             self.conn.sendall(query)
         else:
             query = 'INFO %s' % (srv + '\r\n')
+            self.conn.sendall(query)
+
+    def _links(self, srv=None):
+        '''Usage: /LINKS --> Lists all of the servers currently linked to network'''
+        if srv is None:
+            query = 'LINKS \r\n'
+            self.conn.sendall(query)
+        else:
+            query = 'LINKS %s\r\n' % srv
             self.conn.sendall(query)
 
     def _help(self, cmd=None):
@@ -62,7 +72,8 @@ class Chat(Thread):
                     msg_cmd = msg[0][1:].lower()
                     command = self.commands.get(msg_cmd)
                     if command:
-                        if msg_cmd == 'help' or msg_cmd == 'info':
+                        if (msg_cmd == 'help' or msg_cmd == 'info' or 
+                            msg_cmd == 'links'):
                             msg.append(None)
                             command(msg[1])
                         elif len(msg) < 2:
@@ -103,8 +114,10 @@ class Client(object):
         self.client.sendall(self.namedata)
         self.conn = None
 
+        self.joined_chan = False
         self.server_reply = {'311':self.whois_user_repl, '319':self.whois_chan_repl, 
-                             '353':self.names_repl,      '371':self.info_repl}
+                             '353':self.names_repl,      '371':self.info_repl,
+                             '364':self.links_repl}
 
         while True:
             self.data = self.client.recvfrom(1024)
@@ -145,7 +158,18 @@ class Client(object):
                 elif len(i) > 1:
                     print i.strip(':')         
             print '\n'
-        
+
+    def links_repl(self, server_data):
+        link_info = ' '.join(i.strip(':') for i in server_data[2:6])
+        if int(link_info[0]) < 1:
+            link_info = link_info[2:]
+        else:
+            link_info = 'HOPS: ' + link_info
+        if '365' in server_data:
+            print link_info + '\n'
+            return
+        print link_info
+
     def msg_handle(self, join='', userlist=None):
         user, cmd, channel = self.recv_msg[:3]  
         back = self.recv_msg[3:]
@@ -164,8 +188,12 @@ class Client(object):
         if cmd == 'PRIVMSG':
             print '%s | %s' % (user, ' '.join(i for i in back).strip(':')) 
         if cmd == 'JOIN':
-            if not userlist: 
+            if not self.joined_chan: 
                 self.client.sendall(self.namedata)
-                userlist = 1
+                self.joined_chan = True
                 print 'SUCCESFULLY JOINED %s\n' % channel
+            else:
+                print '%s | entered --> %s' % (user, channel)
+        if cmd == 'QUIT':
+            print '%s | left --> %s' % (user, '#' + self.channel)
 
