@@ -1,5 +1,5 @@
-# --*-- coding: utf-8 --*--
 #!/usr/bin/env python
+# -*- coding: UTF-8 -*-
 
 import socket
 import time
@@ -12,13 +12,20 @@ class Chat(Thread):
         self.conn = conn
         self.server = server
         self.channel = channel
-        self.commands = {'names':self._names, 'whois':self._whois, 
-                         'info':self._info, 'help':self._help,
-                         'links':self._links}
+        self.commands = {'names':self._names, 
+                         'whois':self._whois, 
+                         'info':self._info, 
+                         'help':self._help,
+                         'links':self._links, 
+                         'stats':self._stats,
+                         'quit':self._quit
+                        }
+
         super(Chat, self).__init__()
+        self.CHATTING = True
 
     def _names(self, chan=None):
-        '''Usage: /NAMES [<channel>] --> 
+        '''Usage: /NAMES <channel> --> 
 
            List all nicks visible on channel.
         ''' 
@@ -29,7 +36,7 @@ class Chat(Thread):
         self.conn.sendall(query)
 
     def _whois(self, query=None):
-        '''Usage: /WHOIS [<server>] <nickmask> --> 
+        '''Usage: /WHOIS <nick> --> 
 
            Query information about a user.
         '''
@@ -40,7 +47,7 @@ class Chat(Thread):
         self.conn.sendall(query)
 
     def _info(self, srv=None):
-        '''Usage: /INFO (optional [<server>]) --> 
+        '''Usage: /INFO (optional <server>] --> 
 
            Returns information that describes the server, 
 
@@ -65,8 +72,38 @@ class Chat(Thread):
             query = 'LINKS %s\r\n' % srv
             self.conn.sendall(query)
 
+    def _stats(self, flags=None):
+        '''Usage: /STATS <flag> -->
+
+           Shows statistical information on the server.
+
+           ## STAT-FLAGS ##:
+
+               I = Lists all the current I:Lines (Client auth Lines)
+
+               u = Server Uptime
+
+               m = Gives the Server command list
+
+               L = Information about current server connections
+        '''
+        if not flags:
+            print self._stats.__doc__
+            return
+        query = 'STATS %s %s\r\n' % (flags, self.server)
+        self.conn.sendall(query)
+
+    def _quit(self, msg=None):
+        '''Usage /Quit (optional [<message>]) -->
+
+           Ends a client session from server.
+        '''
+        self.CHATTING = False
+        q_signal = 'QUIT %s\r\n'
+        self.conn.sendall(q_signal) 
+
     def _help(self, cmd=None):
-        '''Usage: /HELP [<command>] --> 
+        '''Usage: /HELP (optional <command>) --> 
 
            Show help information for/on valid commands.
         '''
@@ -86,7 +123,7 @@ class Chat(Thread):
                 print 'Type /HELP for list of commands\n'
 
     def run(self):
-        while True:
+        while self.CHATTING:
             msg = raw_input('')
             if msg:
                 if msg[0] == '/':
@@ -129,12 +166,24 @@ class Client(object):
         self.client.sendall(self.namedata)
         self.conn = None
 
+        self.CHATTING = True
         self.joined_chan = False
-        self.server_reply = {'311':self.whois_user_repl, '319':self.whois_chan_repl, 
-                             '353':self.names_repl,      '371':self.info_repl,
-                             '364':self.links_repl}
+        self.server_reply = {'311':self.whois_user_repl, 
+                             '319':self.whois_chan_repl, 
+                             '353':self.names_repl,      
+                             '371':self.info_repl,
+                             '364':self.links_repl,
 
-        while True:
+                             '481':self.perm_denied_repl,
+                             '263':self.rate_lim_repl,
+                             '212':self.server_com_repl,
+                             '211':self.server_con_repl,
+                             '242':self.server_utme_repl,
+                             '250':self.server_utme_repl,
+                             '215':self.clnt_auth_repl
+                            }
+
+        while self.CHATTING:
             self.data = self.client.recvfrom(1024)
             if self.data:
                 self.recv_msg = tuple(self.data[0].split())
@@ -143,7 +192,8 @@ class Client(object):
                     print 'Channel Ping@ ==> %s' % time.ctime()
                 else: 
                     if len(self.recv_msg) >= 3:
-                        self.msg_handle()                    
+                        self.msg_handle()       
+        return             
 
     def whois_user_repl(self, user_data):
         server_repl = 'User: %s' % (user_data[1] + '@' + user_data[2])
@@ -185,6 +235,33 @@ class Client(object):
             return
         print link_info
 
+    def perm_denied_repl(self, server_response):
+        server_response = ' '.join(server_response).strip(':')
+        print server_response + '\n'
+
+    def rate_lim_repl(self, server_response):
+        server_response = ' '.join(server_response[1:]).strip(':')
+        print server_response + '\n'
+    
+    def server_com_repl(self, server_coms):
+        skips = [self.nick, ':' + self.server]
+        for com in [i for i in server_coms if i not in skips]:
+            if not com.strip(':').isdigit():
+                print '    > %s' % com
+        print ''
+            
+    def server_con_repl(self, server_connections):
+        server_connections = ' '.join(server_connections)
+        print server_connections + '\n' # might need to iterate over list here/
+
+    def server_utme_repl(self, server_data):
+        server_data = ' '.join(server_data[:9]).strip(':')
+        print server_data + '\n'
+
+    def clnt_auth_repl(self, client_data):
+        client_data = ' '.join(client_data)
+        print client_data + '\n'
+
     def msg_handle(self, join='', userlist=None):
         user, cmd, channel = self.recv_msg[:3]  
         back = self.recv_msg[3:]
@@ -192,7 +269,8 @@ class Client(object):
         if user.endswith('.freenode.net') and not self.conn:
             print '\nSUCCESSFULLY CONNECTED TO %s' % self.host
             self.server = user
-            Thread.start(Chat(self.client, self.server, self.channel))
+            self.chat_thread = Chat(self.client, self.server, self.channel)
+            Thread.start(self.chat_thread)    
             self.conn = 1
         elif user.endswith('.freenode.net') and self.conn:
             try:
@@ -210,5 +288,8 @@ class Client(object):
             else:
                 print '%s | entered --> %s' % (user, channel)
         if cmd == 'QUIT':
+            if user == self.nick:
+                self.CHATTING = False                
+                return
             print '%s | left --> %s' % (user, '#' + self.channel)
 
