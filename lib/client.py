@@ -17,27 +17,47 @@ class Chat(Thread):
                          'links':self._links}
         super(Chat, self).__init__()
 
-    def _names(self, chan):
-        '''Usage: /NAMES [<channel>] --> List all nicks visible on channel.''' 
-        query = 'NAMES %s' % chan
+    def _names(self, chan=None):
+        '''Usage: /NAMES [<channel>] --> 
+
+           List all nicks visible on channel.
+        ''' 
+        if not chan:
+            print self._names.__doc__
+            return
+        query = 'NAMES %s\r\n' % chan
         self.conn.sendall(query)
 
-    def _whois(self, query):
-        '''Usage: /WHOIS [<server>] <nickmask> --> Query information about a user.'''
-        query = 'WHOIS ' + query
+    def _whois(self, query=None):
+        '''Usage: /WHOIS [<server>] <nickmask> --> 
+
+           Query information about a user.
+        '''
+        if not query:
+            print self._whois.__doc__
+            return
+        query = 'WHOIS %s\r\n' % query
         self.conn.sendall(query)
 
     def _info(self, srv=None):
-        '''Usage: /INFO (optional [<server>]) --> Returns information that describes the server, optional parameter defaults to current server.'''
+        '''Usage: /INFO (optional [<server>]) --> 
+
+           Returns information that describes the server, 
+
+           optional parameter defaults to current server.
+        '''
         if srv is None:
-            query = 'INFO %s' % (self.server + '\r\n')
+            query = 'INFO %s\r\n' % self.server
             self.conn.sendall(query)
         else:
-            query = 'INFO %s' % (srv + '\r\n')
+            query = 'INFO %s\r\n' % srv
             self.conn.sendall(query)
 
     def _links(self, srv=None):
-        '''Usage: /LINKS --> Lists all of the servers currently linked to network'''
+        '''Usage: /LINKS --> 
+
+           Lists all of the servers currently linked to network.
+        '''
         if srv is None:
             query = 'LINKS \r\n'
             self.conn.sendall(query)
@@ -46,7 +66,10 @@ class Chat(Thread):
             self.conn.sendall(query)
 
     def _help(self, cmd=None):
-        '''Usage: /HELP [<command>] --> Show help information for/on valid commands.'''
+        '''Usage: /HELP [<command>] --> 
+
+           Show help information for/on valid commands.
+        '''
         if not cmd:
             print 'Commands:' 
             all_commands = '< '
@@ -56,7 +79,6 @@ class Chat(Thread):
             print all_commands
         else:
             try:
-                cmd = cmd.strip('\r\n') 
                 func_info = cmd.lower() 
                 print self.commands[func_info].__doc__
             except KeyError:
@@ -68,18 +90,11 @@ class Chat(Thread):
             msg = raw_input('')
             if msg:
                 if msg[0] == '/':
-                    msg = msg.split()
+                    msg = msg.split() + [None]
                     msg_cmd = msg[0][1:].lower()
                     command = self.commands.get(msg_cmd)
                     if command:
-                        if (msg_cmd == 'help' or msg_cmd == 'info' or 
-                            msg_cmd == 'links'):
-                            msg.append(None)
-                            command(msg[1])
-                        elif len(msg) < 2:
-                            print command.func_doc
-                        else:
-                            command(msg[1] + '\r\n')
+                        command(msg[1])
                     else:
                         print 'Server | Unknown Command!'
                         print 'Type /HELP for list of commands'
