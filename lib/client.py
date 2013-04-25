@@ -47,7 +47,7 @@ class Chat(Thread):
         self.conn.sendall(query)
 
     def _info(self, srv=None):
-        '''Usage: /INFO (optional <server>] --> 
+        '''Usage: /INFO (optional <server> --> 
 
            Returns information that describes the server, 
 
@@ -252,7 +252,7 @@ class Client(object):
             
     def server_con_repl(self, server_connections):
         server_connections = ' '.join(server_connections)
-        print server_connections + '\n' # might need to iterate over list here/
+        print server_connections + '\n' 
 
     def server_utme_repl(self, server_data):
         server_data = ' '.join(server_data[:9]).strip(':')
