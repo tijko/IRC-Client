@@ -18,7 +18,9 @@ class Chat(Thread):
                          'help':self._help,
                          'links':self._links, 
                          'stats':self._stats,
-                         'quit':self._quit
+                         'quit':self._quit,
+                         'part':self._part,
+                         'join':self._join
                         }
 
         super(Chat, self).__init__()
@@ -94,13 +96,37 @@ class Chat(Thread):
         self.conn.sendall(query)
 
     def _quit(self, msg=None):
-        '''Usage /Quit (optional [<message>]) -->
+        '''Usage: /QUIT (optional <message>) -->
 
            Ends a client session from server.
         '''
         self.CHATTING = False
         q_signal = 'QUIT %s\r\n'
         self.conn.sendall(q_signal) 
+
+    def _join(self, chan=None):
+        '''Usage: /JOIN <channel> -->
+
+           Allows a client to start listening on the specified channel
+        '''
+        if not chan:
+            print self._join.__doc__
+            return
+        chan_join = 'JOIN %s\r\n' % chan
+        self.conn.sendall(chan_join)
+        self._part('#' + self.channel)
+        self.channel = chan.strip('#')
+
+    def _part(self, chan=None):
+        '''Usage: /PART <channel> -->
+
+           Leave a channels active user's list.
+        '''
+        if not chan:
+            print self._part.__doc__
+            return
+        chan_part = 'PART %s\r\n' % chan
+        self.conn.sendall(chan_part)
 
     def _help(self, cmd=None):
         '''Usage: /HELP (optional <command>) --> 
@@ -167,7 +193,6 @@ class Client(object):
         self.conn = None
 
         self.CHATTING = True
-        self.joined_chan = False
         self.server_reply = {'311':self.whois_user_repl, 
                              '319':self.whois_chan_repl, 
                              '353':self.names_repl,      
@@ -281,9 +306,9 @@ class Client(object):
         if cmd == 'PRIVMSG':
             print '%s | %s' % (user, ' '.join(i for i in back).strip(':')) 
         if cmd == 'JOIN':
-            if not self.joined_chan: 
-                self.client.sendall(self.namedata)
-                self.joined_chan = True
+            if user == self.nick:
+                namedata = 'NAMES #%s\r\n' % channel
+                self.client.sendall(namedata)
                 print 'SUCCESFULLY JOINED %s\n' % channel
             else:
                 print '%s | entered --> %s' % (user, channel)
