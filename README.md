@@ -4,7 +4,9 @@ IRC-Client
 A thin client for irc chat.  You can log onto your favorite irc-channel from you commandline to send a quick
 message or two.  Or for common use if you prefer the terminal to another interface.
 
-I will be adding in more commands but, for now you can send and receive standard messages.
+You can send and receive standard messages with a handful of other commands.
+
+When joining another channel you will automatically part from you current channel if any.
 
 #### usage
 
