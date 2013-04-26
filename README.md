@@ -1,8 +1,9 @@
 IRC-Client
 ==========
 
-A thin client for irc chat on freenode.net.  You can log onto your favorite irc-channel from you commandline 
-to send a quick message or two.  Or for common use if you prefer the terminal to another interface.
+A thin client for irc chat on freenode.net.  You can log onto your favorite irc-channel from your commandline 
+to send a quick message or two.  If you prefer the terminal to another interface, IRC-Client is fine for 
+everyday common use too.
 
 You can send and receive standard messages aswell as a handful of other irc-commands.
 
