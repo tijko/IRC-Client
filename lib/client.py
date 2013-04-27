@@ -112,9 +112,9 @@ class Chat(Thread):
         if not chan:
             print self._join.__doc__
             return
+        self._part('#' + self.channel)
         chan_join = 'JOIN %s\r\n' % chan
         self.conn.sendall(chan_join)
-        self._part('#' + self.channel)
         self.channel = chan.strip('#')
 
     def _part(self, chan=None):
@@ -172,13 +172,11 @@ class Client(object):
     def __init__(self, **kwargs):
         user = kwargs['user']
         port = kwargs['port']
+        password = kwargs['password']
         self.channel = kwargs['channel']
         self.nick = kwargs['nick']
         self.host = kwargs['host']
-        nickdata = 'NICK %s\r\n' % self.nick
         userdata = 'USER %s %s servername :%s\r\n' % (self.nick, self.host, user)
-        joindata = 'JOIN #%s\r\n' % self.channel
-        self.namedata = 'NAMES #%s\r\n' % self.channel
 
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
@@ -186,10 +184,12 @@ class Client(object):
         except socket.error:
             print 'Connection Failed! --> check host & port'
             return
-        self.client.sendall(nickdata)
+        if password:
+            self.client.sendall('PASS %s\r\n' % password)
+        self.client.sendall('NICK %s\r\n' % self.nick)
         self.client.sendall(userdata)
-        self.client.sendall(joindata)
-        self.client.sendall(self.namedata)
+        self.client.sendall('JOIN #%s\r\n' % self.channel)
+        self.client.sendall('NAMES #%s\r\n' % self.channel)
         self.conn = None
 
         self.CHATTING = True
@@ -309,12 +309,13 @@ class Client(object):
             if user == self.nick:
                 namedata = 'NAMES #%s\r\n' % channel
                 self.client.sendall(namedata)
+                self.channel = channel
                 print 'SUCCESFULLY JOINED %s\n' % channel
             else:
+                self.channel = channel
                 print '%s | entered --> %s' % (user, channel)
         if cmd == 'QUIT':
             if user == self.nick:
                 self.CHATTING = False                
                 return
             print '%s | left --> %s' % (user, '#' + self.channel)
-
