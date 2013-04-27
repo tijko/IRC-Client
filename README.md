@@ -17,8 +17,10 @@ part from the current channel, if any.
     Username: tijko-client
     Nickname: tijko 
     Host: irc.freenode.net
+    Do you wish to register? (y or n): y
+    Enter your password: *********
     Port: 6667
-    Channel: favorite-channel
+    Channel: <favorite-channel>
 
     SUCCESSFULLY CONNECTED TO irc.freenode.net
     SUCCESSFULLY JOINED #favorite-channel
