@@ -20,11 +20,13 @@ class Chat(Thread):
                          'stats':self._stats,
                          'quit':self._quit,
                          'part':self._part,
-                         'join':self._join
+                         'join':self._join,
+                         'noise':self._noise
                         }
 
         super(Chat, self).__init__()
         self.CHATTING = True
+        self.verbose = True
 
     def _names(self, chan=None):
         '''Usage: /NAMES <channel> --> 
@@ -128,6 +130,25 @@ class Chat(Thread):
         chan_part = 'PART %s\r\n' % chan
         self.conn.sendall(chan_part)
 
+    def _noise(self, flags=None):
+        '''Usage: /NOISE <flag> -->
+
+           Show or block the extra info for the current channel.
+
+           ## NOISE-FLAGS ##:
+        
+               s = show all channel info
+
+               b = block all channel info
+        '''                                              
+        if not flags:
+            print self._noise.__doc__
+            return
+        elif flags == 's':
+            self.verbose = True
+        elif flags == 'b':
+            self.verbose = False
+
     def _help(self, cmd=None):
         '''Usage: /HELP (optional <command>) --> 
 
@@ -218,7 +239,6 @@ class Client(object):
                 else: 
                     if len(self.recv_msg) >= 3:
                         self.msg_handle()       
-        return             
 
     def whois_user_repl(self, user_data):
         server_repl = 'User: %s' % (user_data[1] + '@' + user_data[2])
@@ -294,8 +314,8 @@ class Client(object):
         if user.endswith('.freenode.net') and not self.conn:
             print '\nSUCCESSFULLY CONNECTED TO %s' % self.host
             self.server = user
-            self.chat_thread = Chat(self.client, self.server, self.channel)
-            Thread.start(self.chat_thread)    
+            self.chat = Chat(self.client, self.server, self.channel)
+            Thread.start(self.chat)    
             self.conn = 1
         elif user.endswith('.freenode.net') and self.conn:
             try:
@@ -311,11 +331,12 @@ class Client(object):
                 self.client.sendall(namedata)
                 self.channel = channel
                 print 'SUCCESFULLY JOINED %s\n' % channel
-            else:
+            elif user != self.nick and self.chat.verbose:
                 self.channel = channel
                 print '%s | entered --> %s' % (user, channel)
         if cmd == 'QUIT':
             if user == self.nick:
                 self.CHATTING = False                
                 return
-            print '%s | left --> %s' % (user, '#' + self.channel)
+            elif user != self.nick and self.chat.verbose:
+                print '%s | left --> %s' % (user, '#' + self.channel)
