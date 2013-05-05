@@ -8,7 +8,7 @@ from threading import Thread
 
 class Chat(Thread):
 
-    def __init__(self, conn, server, channel):
+    def __init__(self, conn, server, channel, blocked):
         self.conn = conn
         self.server = server
         self.channel = channel
@@ -23,13 +23,17 @@ class Chat(Thread):
                          'join':self._join,
                          'noise':self._noise,
                          'block':self._block,
-                         'unblock':self._unblock
+                         'unblock':self._unblock,
+                         'topic':self._topic,
+                         'version':self._version,
+                         'whereami':self._whereami,
+                         'blocklist':self._blocklist
                         }
 
         super(Chat, self).__init__()
         self.CHATTING = True
         self.verbose = True
-        self.blocked = list()
+        self.blocked = blocked
 
     def _names(self, chan=None):
         '''Usage: /NAMES <channel> --> 
@@ -172,7 +176,47 @@ class Chat(Thread):
             print self._unblock.__doc__
             return
         if nick in self.blocked:
-            self.blocked.remove(nick)    
+            self.blocked.remove(nick)   
+
+    def _topic(self, chan=None):
+        '''Usage: /TOPIC <channel> --> 
+
+           Prints ou the topic for the supplied channel.
+        '''
+        if not chan:
+            print self._topic.__doc__
+            return
+        topic = 'TOPIC %s\r\n' % chan
+        self.conn.sendall(topic)
+
+    def _version(self, server=None):
+        '''Usage: /VERSION <server> -->
+
+           Returns the version of program that the server is using.
+        '''
+        if not server:
+            print self._version.__doc__
+            return
+        ver_chk = 'VERSION %s\r\n' % server
+        self.conn.sendall(ver_chk)
+
+    def _whereami(self, query=None):
+        '''Usage: /WHEREAMI -->
+
+           This command will let you know which channel and server you are
+
+           currently connected to.
+        '''
+        if not query:
+            print '\nYou are currently connected to server <%s> and in channel <%s>\n' % (self.server, self.channel)
+
+    def _blocklist(self, nick=None):
+        '''Usage: /BLOCKLIST 
+
+           Shows all the nicks currently being blocked.
+        '''
+        if not nick:
+            print 'Blocked Nicks: %s' % str(self.blocked)
 
     def _help(self, cmd=None):
         '''Usage: /HELP (optional <command>) --> 
@@ -180,10 +224,7 @@ class Chat(Thread):
            Show help information for/on valid commands.
         '''
         if not cmd:
-            print 'Commands:\n<<<' 
-            for c in range(0, len(self.commands.keys()), 3):
-                print '  ~  '.join(self.commands.keys()[c:c+3]) 
-            print '>>>\n'
+            print '\nCommands:\n\n<<<' + ' -  '.join(self.commands.keys()) + '>>>\n'
         else:
             try:
                 func_info = cmd.lower() 
@@ -235,8 +276,8 @@ class Client(object):
         self.client.sendall('JOIN #%s\r\n' % self.channel)
         self.client.sendall('NAMES #%s\r\n' % self.channel)
         self.conn = None
-        self.blocked = list()
 
+        self.blocked = list()
         self.CHATTING = True
         self.server_reply = {'311':self.whois_user_repl, 
                              '319':self.whois_chan_repl, 
@@ -250,7 +291,11 @@ class Client(object):
                              '211':self.server_con_repl,
                              '242':self.server_utme_repl,
                              '250':self.server_utme_repl,
-                             '215':self.clnt_auth_repl
+                             '215':self.clnt_auth_repl,
+                             '351':self.server_ver,
+                             '005':self.server_aux,
+                             '331':self.chan_topic,
+                             '332':self.chan_topic
                             }
 
         while self.CHATTING:
@@ -331,6 +376,15 @@ class Client(object):
         client_data = ' '.join(client_data)
         print client_data + '\n'
 
+    def server_ver(self, server_data):
+        print '\nServer Version: %s\n' % server_data[0]
+
+    def server_aux(self, server_data):
+        print ' '.join(server_data) + '\n'
+
+    def chan_topic(self, topic):
+        print '\n' + 'Topic for %s' % (' '.join(topic)) + '\n'
+
     def msg_handle(self, join='', userlist=None):
         user, cmd, channel = self.recv_msg[:3]  
         back = self.recv_msg[3:]
@@ -338,7 +392,7 @@ class Client(object):
         if user.endswith('.freenode.net') and not self.conn:
             print '\nSUCCESSFULLY CONNECTED TO %s' % self.host
             self.server = user
-            self.chat = Chat(self.client, self.server, self.channel)
+            self.chat = Chat(self.client, self.server, self.channel, self.blocked)
             Thread.start(self.chat)    
             self.conn = 1
         elif user.endswith('.freenode.net') and self.conn:
