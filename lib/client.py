@@ -21,12 +21,15 @@ class Chat(Thread):
                          'quit':self._quit,
                          'part':self._part,
                          'join':self._join,
-                         'noise':self._noise
+                         'noise':self._noise,
+                         'block':self._block,
+                         'unblock':self._unblock
                         }
 
         super(Chat, self).__init__()
         self.CHATTING = True
         self.verbose = True
+        self.blocked = list()
 
     def _names(self, chan=None):
         '''Usage: /NAMES <channel> --> 
@@ -149,18 +152,38 @@ class Chat(Thread):
         elif flags == 'b':
             self.verbose = False
 
+    def _block(self, nick=None): 
+        '''Usage: /BLOCK <nick> --> 
+           
+           Blocks the chat from the nick supplied.
+        '''
+        if not nick:
+            print self._block.__doc__
+            return
+        if nick not in self.blocked:
+            self.blocked.append(nick)
+
+    def _unblock(self, nick=None):
+        '''Usage: /UNBLOCK <nick> -->
+
+           Unblocks chat from a nick thats currently being blocked.
+        '''
+        if not nick:
+            print self._unblock.__doc__
+            return
+        if nick in self.blocked:
+            self.blocked.remove(nick)    
+
     def _help(self, cmd=None):
         '''Usage: /HELP (optional <command>) --> 
 
            Show help information for/on valid commands.
         '''
         if not cmd:
-            print 'Commands:' 
-            all_commands = '< '
-            for c in self.commands.keys():
-                all_commands += (c.upper() + '  ')
-            all_commands += '>\n'
-            print all_commands
+            print 'Commands:\n<<<' 
+            for c in range(0, len(self.commands.keys()), 3):
+                print '  ~  '.join(self.commands.keys()[c:c+3]) 
+            print '>>>\n'
         else:
             try:
                 func_info = cmd.lower() 
@@ -212,6 +235,7 @@ class Client(object):
         self.client.sendall('JOIN #%s\r\n' % self.channel)
         self.client.sendall('NAMES #%s\r\n' % self.channel)
         self.conn = None
+        self.blocked = list()
 
         self.CHATTING = True
         self.server_reply = {'311':self.whois_user_repl, 
@@ -323,7 +347,7 @@ class Client(object):
                 reply(back)
             except KeyError:
                 pass 
-        if cmd == 'PRIVMSG':
+        if cmd == 'PRIVMSG' and user not in self.blocked:
             print '%s | %s' % (user, ' '.join(i for i in back).strip(':')) 
         if cmd == 'JOIN':
             if user == self.nick:
