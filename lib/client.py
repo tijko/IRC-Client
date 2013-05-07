@@ -27,7 +27,8 @@ class Chat(Thread):
                          'topic':self._topic,
                          'version':self._version,
                          'whereami':self._whereami,
-                         'blocklist':self._blocklist
+                         'blocklist':self._blocklist,
+                         'nick':self._nick
                         }
 
         super(Chat, self).__init__()
@@ -218,6 +219,19 @@ class Chat(Thread):
         if not nick:
             print 'Blocked Nicks: %s' % str(self.blocked)
 
+    def _nick(self, nick=None):
+        '''Usage /NICK <nick> -->
+
+           Registers the supplied nick with services.
+        '''
+        if not nick:
+            print self._nick.__doc__
+            return
+        self.nick = nick
+        ident = "NICK %s\r\n" % self.nick
+        self.conn.sendall(ident)
+        self._join('#' + self.channel)
+
     def _help(self, cmd=None):
         '''Usage: /HELP (optional <command>) --> 
 
@@ -295,12 +309,13 @@ class Client(object):
                              '351':self.server_ver,
                              '005':self.server_aux,
                              '331':self.chan_topic,
-                             '332':self.chan_topic
+                             '332':self.chan_topic,
+                             '433':self.nick_inuse
                             }
 
         while self.CHATTING:
             self.data = self.client.recvfrom(1024)
-            if self.data:
+            if self.data and len(self.data[0]) > 0:
                 self.recv_msg = tuple(self.data[0].split())
                 if self.recv_msg[0] == 'PING':
                     self.client.sendall('PONG ' + self.recv_msg[1] + '\r\n')
@@ -308,6 +323,9 @@ class Client(object):
                 else: 
                     if len(self.recv_msg) >= 3:
                         self.msg_handle()       
+            elif self.data and len(self.data[0]) == 0:
+                print 'Connection Dropped!'
+                return
 
     def whois_user_repl(self, user_data):
         server_repl = 'User: %s' % (user_data[1] + '@' + user_data[2])
@@ -385,6 +403,10 @@ class Client(object):
     def chan_topic(self, topic):
         print '\n' + 'Topic for %s' % (' '.join(topic)) + '\n'
 
+    def nick_inuse(self, msg):
+        print '\n' + ' '.join(msg[:6]) 
+        print '\nUse the command "/NICK <different_nick_here>"' 
+
     def msg_handle(self, join='', userlist=None):
         user, cmd, channel = self.recv_msg[:3]  
         back = self.recv_msg[3:]
@@ -415,6 +437,5 @@ class Client(object):
         if cmd == 'QUIT':
             if user == self.nick:
                 self.CHATTING = False                
-                return
             elif user != self.nick and self.chat.verbose:
                 print '%s | left --> %s' % (user, '#' + self.channel)
