@@ -227,10 +227,9 @@ class Chat(Thread):
         if not nick:
             print self._nick.__doc__
             return
-        self.nick = nick
-        ident = "NICK %s\r\n" % self.nick
+        ident = "NICK %s\r\n" % nick
         self.conn.sendall(ident)
-        self._join('#' + self.channel)
+
 
     def _help(self, cmd=None):
         '''Usage: /HELP (optional <command>) --> 
@@ -405,7 +404,7 @@ class Client(object):
 
     def nick_inuse(self, msg):
         print '\n' + ' '.join(msg[:6]) 
-        print '\nUse the command "/NICK <different_nick_here>"' 
+        self.CHATTING = False
 
     def msg_handle(self, join='', userlist=None):
         user, cmd, channel = self.recv_msg[:3]  
