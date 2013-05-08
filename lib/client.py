@@ -227,9 +227,10 @@ class Chat(Thread):
         if not nick:
             print self._nick.__doc__
             return
-        ident = "NICK %s\r\n" % nick
+        self.nick = nick
+        ident = "NICK %s\r\n" % self.nick
         self.conn.sendall(ident)
-
+        self._join('#' + self.channel)
 
     def _help(self, cmd=None):
         '''Usage: /HELP (optional <command>) --> 
@@ -403,8 +404,8 @@ class Client(object):
         print '\n' + 'Topic for %s' % (' '.join(topic)) + '\n'
 
     def nick_inuse(self, msg):
-        print '\n' + ' '.join(msg[:6]) 
-        self.CHATTING = False
+        print '\n' + ' '.join(msg[:6])
+        print 'Use the /NICK <nick> command to choose a new nick' 
 
     def msg_handle(self, join='', userlist=None):
         user, cmd, channel = self.recv_msg[:3]  
@@ -418,6 +419,7 @@ class Client(object):
             self.conn = 1
         elif user.endswith('.freenode.net') and self.conn:
             try:
+                self.nick = channel 
                 reply = self.server_reply[cmd]
                 reply(back)
             except KeyError:
