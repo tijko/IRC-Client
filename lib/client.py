@@ -28,7 +28,8 @@ class Chat(Thread):
                          'version':self._version,
                          'whereami':self._whereami,
                          'blocklist':self._blocklist,
-                         'nick':self._nick
+                         'nick':self._nick,
+                         'whowas':self._whowas
                         }
 
         super(Chat, self).__init__()
@@ -212,7 +213,7 @@ class Chat(Thread):
             print '\nYou are currently connected to server <%s> and in channel <%s>\n' % (self.server, self.channel)
 
     def _blocklist(self, nick=None):
-        '''Usage: /BLOCKLIST 
+        '''Usage: /BLOCKLIST -->
 
            Shows all the nicks currently being blocked.
         '''
@@ -231,6 +232,17 @@ class Chat(Thread):
         ident = "NICK %s\r\n" % self.nick
         self.conn.sendall(ident)
         self._join('#' + self.channel)
+
+    def _whowas(self, nick=None):
+        '''Usage: /WHOWAS <nick> -->
+
+           Returns information about a nick that doesn't exist anymore.
+        '''
+        if not nick:
+            print self._whowas.__doc__
+            return
+        whowas_msg = "WHOWAS %s\r\n" % nick
+        self.conn.sendall(whowas_msg)
 
     def _help(self, cmd=None):
         '''Usage: /HELP (optional <command>) --> 
@@ -310,11 +322,17 @@ class Client(object):
                              '005':self.server_aux,
                              '331':self.chan_topic,
                              '332':self.chan_topic,
-                             '433':self.nick_inuse
+                             '433':self.nick_inuse,
+                             '314':self.whois_user_repl,
+                             '330':self.whowas_repl
                             }
 
         while self.CHATTING:
-            self.data = self.client.recvfrom(1024)
+            try:
+                self.data = self.client.recvfrom(1024)
+            except socket.error:
+                print "Bad Connection!"
+                return
             if self.data and len(self.data[0]) > 0:
                 self.recv_msg = tuple(self.data[0].split())
                 if self.recv_msg[0] == 'PING':
@@ -407,6 +425,18 @@ class Client(object):
         print '\n' + ' '.join(msg[:6])
         print 'Use the /NICK <nick> command to choose a new nick' 
 
+    def whowas_repl(self, server_data):
+        skips = [self.nick, ':' + self.server, '330', '369', '312', '314']
+        whowas_msg = ' '.join(i for i in server_data[:-3] if i not in skips)
+        pos = 0
+        msg = whowas_msg.split(' :')
+        while pos < len(msg):
+            out = ('\n' + msg[pos].split()[0] + 
+                   ' ' + ''.join(msg[pos + 1]) +  
+                   ' ' + ''.join(msg[pos + 2]))
+            pos += 3
+            print out
+    
     def msg_handle(self, join='', userlist=None):
         user, cmd, channel = self.recv_msg[:3]  
         back = self.recv_msg[3:]
