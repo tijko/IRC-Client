@@ -4,6 +4,7 @@
 import socket
 import time
 from threading import Thread
+from chk_wiki import wiki_lookup
 
 
 class Chat(Thread):
@@ -29,7 +30,8 @@ class Chat(Thread):
                          'whereami':self._whereami,
                          'blocklist':self._blocklist,
                          'nick':self._nick,
-                         'whowas':self._whowas
+                         'whowas':self._whowas,
+                         'whatis':self._whatis
                         }
 
         super(Chat, self).__init__()
@@ -244,6 +246,16 @@ class Chat(Thread):
         whowas_msg = "WHOWAS %s\r\n" % nick
         self.conn.sendall(whowas_msg)
 
+    def _whatis(self, lookup=None):
+        '''Usage: /WHATIS <item> -->
+
+           Returns a query of wikipedia for the supplied item.
+        '''
+        if not lookup:
+            print self._whatis__doc__
+            return
+        wiki_lookup(lookup)        
+
     def _help(self, cmd=None):
         '''Usage: /HELP (optional <command>) --> 
 
@@ -251,13 +263,13 @@ class Chat(Thread):
         '''
         if not cmd:
             print '\nCommands:\n\n<<<' + ' -  '.join(self.commands.keys()) + '>>>\n'
-        else:
-            try:
-                func_info = cmd.lower() 
-                print self.commands[func_info].__doc__
-            except KeyError:
-                print 'Server | Unknown Command!'
-                print 'Type /HELP for list of commands\n'
+            return
+        try:
+            func_info = cmd.lower() 
+            print self.commands[func_info].__doc__
+        except KeyError:
+            print 'Server | Unknown Command!'
+            print 'Type /HELP for list of commands\n'
 
     def run(self):
         while self.CHATTING:
