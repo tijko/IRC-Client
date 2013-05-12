@@ -28,7 +28,8 @@ part from the current channel, if any.
     /help
     Commands:
 
-    <<<info - quit - noise - stats - whois - links - whowas - unblock - topic - nick - part       - whoami - names - version - whereami - join - whatis - blocklist - block - help>>>
+    <<<info - quit - noise - stats - whois - links - whowas - unblock - topic - nick - part
+       - whoami - names - version - whereami - join - whatis - blocklist - block - help>>>
 
 This small sample shows how you would log on to "favorite-channel" then use the `/help` command to show the rest of 
 the clients command options. 
