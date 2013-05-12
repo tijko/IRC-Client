@@ -26,9 +26,9 @@ part from the current channel, if any.
     SUCCESSFULLY JOINED #favorite-channel
 
     /help
-    commands:
-    < INFO  QUIT  PART  STATS  NAMES  LINKS  JOIN  HELP  WHOIS  >
+    Commands:
 
+    <<<info - quit - noise - stats - whois - links - whowas - unblock - topic - nick - part       - whoami - names - version - whereami - join - whatis - blocklist - block - help>>>
 
 This small sample shows how you would log on to "favorite-channel" then use the `/help` command to show the rest of 
 the clients command options. 
