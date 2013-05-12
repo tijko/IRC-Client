@@ -9,10 +9,11 @@ from chk_wiki import wiki_lookup
 
 class Chat(Thread):
 
-    def __init__(self, conn, server, channel, blocked):
-        self.conn = conn
-        self.server = server
-        self.channel = channel
+    def __init__(self, **kwargs):
+        self.conn = kwargs['conn']
+        self.server = kwargs['server']
+        self.channel = kwargs['channel']
+        self.nick = kwargs['nick']
         self.commands = {'names':self._names, 
                          'whois':self._whois, 
                          'info':self._info, 
@@ -31,13 +32,14 @@ class Chat(Thread):
                          'blocklist':self._blocklist,
                          'nick':self._nick,
                          'whowas':self._whowas,
-                         'whatis':self._whatis
+                         'whatis':self._whatis,
+                         'whoami':self._whoami
                         }
 
         super(Chat, self).__init__()
         self.CHATTING = True
         self.verbose = True
-        self.blocked = blocked
+        self.blocked = kwargs['blocked']
 
     def _names(self, chan=None):
         '''Usage: /NAMES <channel> --> 
@@ -256,13 +258,23 @@ class Chat(Thread):
             return
         wiki_lookup(lookup)        
 
+    def _whoami(self, nick=None):
+        '''Usage: /WHOAMI -->
+    
+           Prints out your current nick.
+        '''
+        if nick:
+            print self._whoami.__doc__
+            return
+        print "You are currently known as => %s" % self.nick
+
     def _help(self, cmd=None):
         '''Usage: /HELP (optional <command>) --> 
 
            Show help information for/on valid commands.
         '''
         if not cmd:
-            print '\nCommands:\n\n<<<' + ' -  '.join(self.commands.keys()) + '>>>\n'
+            print 'Commands:\n\n<<<' + ' - '.join(self.commands.keys()) + '>>>\n'
             return
         try:
             func_info = cmd.lower() 
@@ -456,7 +468,11 @@ class Client(object):
         if user.endswith('.freenode.net') and not self.conn:
             print '\nSUCCESSFULLY CONNECTED TO %s' % self.host
             self.server = user
-            self.chat = Chat(self.client, self.server, self.channel, self.blocked)
+            self.chat = Chat(conn=self.client, 
+                             server=self.server, 
+                             channel=self.channel,
+                             nick = self.nick, 
+                             blocked= self.blocked)
             Thread.start(self.chat)    
             self.conn = 1
         elif user.endswith('.freenode.net') and self.conn:
