@@ -11,7 +11,7 @@ def wiki_lookup(query):
     req = requests.get(wiki + query)
     soup = BeautifulSoup(req.content)
     p_tags = soup.findAll('p')
-    if len(p_tags) <= 2:
+    if any(i.text=='It may also refer to:' for i in p_tags) or len(p_tags) <= 3:
         a_tags = soup.findAll("a")
         for tag in a_tags:
             print "[%d] -- %s" % (a_tags.index(tag) + 1, tag['href'])
