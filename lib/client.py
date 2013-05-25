@@ -33,7 +33,8 @@ class Chat(Thread):
                          'nick':self._nick,
                          'whowas':self._whowas,
                          'whatis':self._whatis,
-                         'whoami':self._whoami
+                         'whoami':self._whoami,
+                         'list':self._list
                         }
 
         super(Chat, self).__init__()
@@ -268,6 +269,18 @@ class Chat(Thread):
             return
         print "You are currently known as => %s" % self.nick
 
+    def _list(self, chan=None):
+        '''Usage: /LIST (optional <channel>) -->
+
+           Will show all the channels available and their topic.
+        '''
+        if not chan:
+            lst_msg = "LIST\r\n"
+            self.conn.sendall(lst_msg)
+        else:
+            lst_msg = "LIST #%s\r\n" % chan
+            self.conn.sendall(lst_msg)
+
     def _help(self, cmd=None):
         '''Usage: /HELP (optional <command>) --> 
 
@@ -348,7 +361,8 @@ class Client(object):
                              '332':self.chan_topic,
                              '433':self.nick_inuse,
                              '314':self.whois_user_repl,
-                             '330':self.whowas_repl
+                             '330':self.whowas_repl,
+                             '322':self.list_repl
                             }
 
         while self.CHATTING:
@@ -460,6 +474,11 @@ class Client(object):
                    ' ' + ''.join(msg[pos + 2]))
             pos += 3
             print out
+
+    def list_repl(self, list_data):
+        topic = ' '.join(list_data)
+        print "--" + topic.split(' :')[0] + "--"
+        print topic.split(' :')[1] + '\n'
     
     def msg_handle(self, join='', userlist=None):
         user, cmd, channel = self.recv_msg[:3]  
