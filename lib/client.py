@@ -4,6 +4,7 @@
 import socket
 import time
 from threading import Thread
+from responses import Response
 from chk_wiki import wiki_lookup
 
 
@@ -342,27 +343,28 @@ class Client(object):
 
         self.blocked = list()
         self.CHATTING = True
-        self.server_reply = {'311':self.whois_user_repl, 
-                             '319':self.whois_chan_repl, 
-                             '353':self.names_repl,      
-                             '371':self.info_repl,
-                             '364':self.links_repl,
+        self.rspd = Response(self.nick)
+        self.server_reply = {'311':self.rspd.whois_user_repl, 
+                             '319':self.rspd.whois_chan_repl, 
+                             '353':self.rspd.names_repl,      
+                             '371':self.rspd.info_repl,
+                             '364':self.rspd.links_repl,
 
-                             '481':self.perm_denied_repl,
-                             '263':self.rate_lim_repl,
-                             '212':self.server_com_repl,
-                             '211':self.server_con_repl,
-                             '242':self.server_utme_repl,
-                             '250':self.server_utme_repl,
-                             '215':self.clnt_auth_repl,
-                             '351':self.server_ver,
-                             '005':self.server_aux,
-                             '331':self.chan_topic,
-                             '332':self.chan_topic,
-                             '433':self.nick_inuse,
-                             '314':self.whois_user_repl,
-                             '330':self.whowas_repl,
-                             '322':self.list_repl
+                             '481':self.rspd.perm_denied_repl,
+                             '263':self.rspd.rate_lim_repl,
+                             '212':self.rspd.server_com_repl,
+                             '211':self.rspd.server_con_repl,
+                             '242':self.rspd.server_utme_repl,
+                             '250':self.rspd.server_utme_repl,
+                             '215':self.rspd.clnt_auth_repl,
+                             '351':self.rspd.server_ver,
+                             '005':self.rspd.server_aux,
+                             '331':self.rspd.chan_topic,
+                             '332':self.rspd.chan_topic,
+                             '433':self.rspd.nick_inuse,
+                             '314':self.rspd.whois_user_repl,
+                             '330':self.rspd.whowas_repl,
+                             '322':self.rspd.list_repl
                             }
 
         while self.CHATTING:
@@ -382,103 +384,6 @@ class Client(object):
             elif self.data and len(self.data[0]) == 0:
                 print 'Connection Dropped!'
                 return
-
-    def whois_user_repl(self, user_data):
-        server_repl = 'User: %s' % (user_data[1] + '@' + user_data[2])
-        print server_repl 
-
-    def whois_chan_repl(self, chan_data):
-        server_repl = ('Real Name: %s \nServer: %s' % 
-                      (chan_data[0], chan_data[2].strip(':'))) 
-        print server_repl + '\n'
-    
-    def names_repl(self, userlist):
-        if any(i.endswith('.freenode.net') for i in userlist[2:]):
-            pass
-        else:
-            server_repl = ('Users available on %s:\n' + '=' * 25 + '\n') % userlist[1]
-            for usr in userlist[2:]:
-                server_repl += ('  ~' + usr.strip(':@') + '\n')
-            print server_repl 
-    
-    def info_repl(self, server_data):
-        skips = [self.server, self.nick, ':', '371', (':' + self.server)]
-        if len(server_data) > 2:
-            server_data = ' '.join(i for i in server_data if i not in skips).split(' :')
-            for i in server_data:
-                if '.freenode.net' in i and i[:3] != 'irc':
-                    pass
-                elif len(i) > 1:
-                    print i.strip(':')         
-            print '\n'
-
-    def links_repl(self, server_data):
-        link_info = ' '.join(i.strip(':') for i in server_data[2:6])
-        if int(link_info[0]) < 1:
-            link_info = link_info[2:]
-        else:
-            link_info = 'HOPS: ' + link_info
-        if '365' in server_data:
-            print link_info + '\n'
-            return
-        print link_info
-
-    def perm_denied_repl(self, server_response):
-        server_response = ' '.join(server_response).strip(':')
-        print server_response + '\n'
-
-    def rate_lim_repl(self, server_response):
-        server_response = ' '.join(server_response[1:]).strip(':')
-        print server_response + '\n'
-    
-    def server_com_repl(self, server_coms):
-        skips = [self.nick, ':' + self.server]
-        for com in [i for i in server_coms if i not in skips]:
-            if not com.strip(':').isdigit():
-                print '    > %s' % com
-        print ''
-            
-    def server_con_repl(self, server_connections):
-        server_connections = ' '.join(server_connections)
-        print server_connections + '\n' 
-
-    def server_utme_repl(self, server_data):
-        server_data = ' '.join(server_data[:9]).strip(':')
-        print server_data + '\n'
-
-    def clnt_auth_repl(self, client_data):
-        client_data = ' '.join(client_data)
-        print client_data + '\n'
-
-    def server_ver(self, server_data):
-        print '\nServer Version: %s\n' % server_data[0]
-
-    def server_aux(self, server_data):
-        print ' '.join(server_data) + '\n'
-
-    def chan_topic(self, topic):
-        print '\n' + 'Topic for %s' % (' '.join(topic)) + '\n'
-
-    def nick_inuse(self, msg):
-        print '\n' + ' '.join(msg[:6])
-        print 'Use the /NICK <nick> command to choose a new nick' 
-
-    def whowas_repl(self, server_data):
-        skips = [self.nick, ':' + self.server, '330', '369', '312', '314']
-        whowas_msg = ' '.join(i for i in server_data[:-3] if i not in skips)
-        pos = 0
-        msg = whowas_msg.split(' :')
-        while pos < len(msg):
-            out = ('\n' + msg[pos].split()[0] + 
-                   ' ' + ''.join(msg[pos + 1]) +  
-                   ' ' + ''.join(msg[pos + 2]))
-            pos += 3
-            print out
-
-    def list_repl(self, list_data):
-        topic = ' '.join(list_data)
-        print "--" + topic.split(' :')[0] + "--"
-        print topic.split(' :')[1] + '\n'
     
     def msg_handle(self, join='', userlist=None):
         user, cmd, channel = self.recv_msg[:3]  
@@ -487,6 +392,7 @@ class Client(object):
         if user.endswith('.freenode.net') and not self.conn:
             print '\nSUCCESSFULLY CONNECTED TO %s' % self.host
             self.server = user
+            self.rspd.server = user
             self.chat = Chat(conn=self.client, 
                              server=self.server, 
                              channel=self.channel,
@@ -497,6 +403,7 @@ class Client(object):
         elif user.endswith('.freenode.net') and self.conn:
             try:
                 self.nick = channel 
+                self.rspd.nick = channel
                 reply = self.server_reply[cmd]
                 reply(back)
             except KeyError:
