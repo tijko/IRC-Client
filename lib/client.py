@@ -35,12 +35,15 @@ class Chat(Thread):
                          'whowas':self._whowas,
                          'whatis':self._whatis,
                          'whoami':self._whoami,
-                         'list':self._list
+                         'list':self._list,
+                         'pause':self._pause,
+                         'unpause':self._unpause
                         }
 
         super(Chat, self).__init__()
         self.CHATTING = True
         self.verbose = True
+        self.paused = kwargs['pause']
         self.blocked = kwargs['blocked']
 
     def _names(self, chan=None):
@@ -297,6 +300,24 @@ class Chat(Thread):
             print 'Server | Unknown Command!'
             print 'Type /HELP for list of commands\n'
 
+    def _pause(self, channel=None):
+        '''Usage: /PAUSE -->
+
+           This will pause the channel's "chatter" if you want to use
+
+           "whatis" or the like.
+        '''
+        if not channel and not self.paused:
+            self.paused = self.paused.append('pause')
+
+    def _unpause(self, channel=None):
+        '''Usage: /UNPAUSE -->
+
+           To lift the pause on a channel.
+        '''
+        if not channel and self.paused:
+            self.paused = self.paused.pop(0)
+
     def run(self):
         while self.CHATTING:
             msg = raw_input('')
@@ -342,6 +363,7 @@ class Client(object):
         self.conn = None
 
         self.blocked = list()
+        self.paused = list() 
         self.CHATTING = True
         self.rspd = Response(self.nick)
         self.server_reply = {'311':self.rspd.whois_user_repl, 
@@ -397,7 +419,8 @@ class Client(object):
                              server=self.server, 
                              channel=self.channel,
                              nick = self.nick, 
-                             blocked= self.blocked)
+                             blocked= self.blocked,
+                             pause=self.paused)
             Thread.start(self.chat)    
             self.conn = 1
         elif user.endswith('.freenode.net') and self.conn:
@@ -408,7 +431,7 @@ class Client(object):
                 reply(back)
             except KeyError:
                 pass 
-        if cmd == 'PRIVMSG' and user not in self.blocked:
+        if cmd == 'PRIVMSG' and user not in self.blocked and not self.paused:
             print '%s | %s' % (user, ' '.join(i for i in back).strip(':')) 
         if cmd == 'JOIN':
             if user == self.nick:
