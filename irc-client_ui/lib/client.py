@@ -13,8 +13,12 @@ class Client(Frame):
     def __init__(self, **kwargs):
         Frame.__init__(self, Tk()) 
         self.pack()
-        self.chat_log = Text(self, width=100, height=30, wrap=WORD)
+        scrollbar = Scrollbar(self)
+        scrollbar.pack(side=RIGHT, fill=Y)
+        self.chat_log = Text(self, width=100, height=30, 
+                             wrap=WORD, yscrollcommand=scrollbar.set)
         self.chat_log.pack()
+        scrollbar.config(command=self.chat_log.yview)
         self.scrn_loop = self.chat_log.after(1000, self.chat_handle)
         self.entry = Entry(self)
         self.entry.bind('<Return>', self.input_handle)
