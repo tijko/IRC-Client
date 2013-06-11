@@ -388,9 +388,10 @@ class Client(Frame):
             else:
                 new_msg = 'privmsg %s :'  % self.channel + msg + '\r\n'
                 self.client.sendall(new_msg)
-                self.chat_log.insert(END, self.nick + ' | ' + msg + '\n')
+                line_spacing = ' ' * (16 - len(self.nick))
+                self.chat_log.insert(END, self.nick + line_spacing + '| ' + msg + '\n')
 
-    def chat_handle(self):  # exit gracefully?      
+    def chat_handle(self):        
         self.data = None
         socket_data = select.select([self.client], [], [], 0.3)
         if socket_data[0]:
@@ -431,7 +432,8 @@ class Client(Frame):
             except KeyError:
                 pass 
         if cmd == 'PRIVMSG' and user not in self.blocked and not self.paused:
-            self.chat_log.insert(END, "%s | %s\n" % (user, ' '.join(i for i in back).strip(':')))
+            line_spacing = ' ' * (16 - len(user))
+            self.chat_log.insert(END, user + line_spacing + "| %s\n" % ' '.join(i for i in back).strip(':'))
         if cmd == 'JOIN':
             if user == self.nick:
                 namedata = 'NAMES #%s\r\n' % channel
@@ -440,9 +442,11 @@ class Client(Frame):
                 self.chat_log.insert(END, "SUCCESSFULLY JOINED %s\n" % channel)
             elif user != self.nick: # and self.chat.verbose:
                 self.channel = channel
-                self.chat_log.insert(END, "%s | entered --> %s\n" % (user, channel))
+                line_spacing = ' ' * (16 - len(user))
+                self.chat_log.insert(END, user + line_spacing + "| entered --> %s\n" % channel)
         if cmd == 'QUIT':
             if user == self.nick:
                 self.CHATTING = False                
             elif user != self.nick:  # and self.chat.verbose://handle verbos
-                self.chat_log.insert(END, "%s | left --> %s\n" % (user, '#' + self.channel))
+                line_spacing = ' ' * (16 - len(user)) 
+                self.chat_log.insert(END, user + line_spacing + "| left --> %s\n" % self.channel)
