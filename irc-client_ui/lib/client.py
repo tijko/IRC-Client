@@ -6,7 +6,6 @@ import time
 import select
 from Tkinter import *
 from responses import Response
-from chk_wiki import wiki_lookup
                    
 
 class Client(Frame):
@@ -371,25 +370,26 @@ class Client(Frame):
     def input_handle(self, event):
         msg = self.entry.get()
         self.entry.delete(0, 'end')
-        if msg[0] == '/':
-            msg = msg.split() + [None]
-            msg_cmd = msg[0][1:].lower()
-            command = self.commands.get(msg_cmd)
-            if command:
-                command(msg[1])
+        if len(msg) > 0:
+            if msg[0] == '/':
+                msg = msg.split() + [None]
+                msg_cmd = msg[0][1:].lower()
+                command = self.commands.get(msg_cmd)
+                if command:
+                    command(msg[1])
+                else:
+                    self.chat_log.insert(END, "Server | Unknown Command!\n")
+                    self.chat_log.insert(END, "Type /HELP for list of commands\n")
+                    self.chat_log.insert(END, "or /HELP <command> for information on a valid command\n")
             else:
-                self.chat_log.insert(END, "Server | Unknown Command!\n")
-                self.chat_log.insert(END, "Type /HELP for list of commands\n")
-                self.chat_log.insert(END, "or /HELP <command> for information on a valid command\n")
-        else:
-            new_msg = 'privmsg %s :'  % self.channel + msg + '\r\n'
-            self.client.sendall(new_msg)
-            self.chat_log.insert(END, self.nick + ' | ' + msg + '\n')
+                new_msg = 'privmsg %s :'  % self.channel + msg + '\r\n'
+                self.client.sendall(new_msg)
+                self.chat_log.insert(END, self.nick + ' | ' + msg + '\n')
 
     def chat_handle(self):  # exit gracefully?      
         self.data = None
-        ready = select.select([self.client], [], [], 0.3)
-        if ready[0]:
+        socket_data = select.select([self.client], [], [], 0.3)
+        if socket_data[0]:
             try:
                 self.data = self.client.recvfrom(1024)
             except socket.error:
