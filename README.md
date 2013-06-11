@@ -3,7 +3,7 @@ IRC-Client
 
 A thin client for irc chat on freenode.net.  You can log onto your favorite irc-channel from your commandline 
 to send a quick message or two.  If you prefer the terminal to another interface, IRC-Client is fine for 
-everyday common use too.
+everyday common use too(see note).
 
 You can send and receive standard messages aswell as a handful of other irc-commands.
 
@@ -33,3 +33,8 @@ part from the current channel, if any.
 
 This small sample shows how you would log on to "favorite-channel" then use the `/help` command to show the rest of 
 the clients command options. 
+
+#### Note
+
+There is a simple gui version made with `Tkinter`.  It still has some bugs being worked out and you need to edit the 
+main file for your user information.  Other than that it's fine if you want to use it.
