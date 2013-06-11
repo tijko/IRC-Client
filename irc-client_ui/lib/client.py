@@ -6,6 +6,7 @@ import time
 import select
 from Tkinter import *
 from responses import Response
+from chk_wiki import wiki_lookup
                    
 
 class Client(Frame):
@@ -13,9 +14,9 @@ class Client(Frame):
     def __init__(self, **kwargs):
         Frame.__init__(self, Tk()) 
         self.pack()
-        self.lb = Listbox(self, width=100, height=30)
-        self.lb.pack()
-        self.scrn_loop = self.lb.after(1000, self.chat_handle)
+        self.chat_log = Text(self, width=100, height=30, wrap=WORD)
+        self.chat_log.pack()
+        self.scrn_loop = self.chat_log.after(1000, self.chat_handle)
         self.entry = Entry(self)
         self.entry.bind('<Return>', self.input_handle)
         self.entry.pack(side=BOTTOM, fill=X)
@@ -33,7 +34,7 @@ class Client(Frame):
             self.client.connect((self.host, port))
             self.client.setblocking(0)
         except socket.error:
-            self.lb.insert(END, 'Connection Failed! --> check host & port')
+            self.chat_log.insert(END, 'Connection Failed! --> check host & port\n')
             return
         if password:
             self.client.sendall('PASS %s\r\n' % password)
@@ -46,7 +47,7 @@ class Client(Frame):
         self.blocked = list()
         self.paused = list() 
         self.CHATTING = True
-        self.rspd = Response(self.lb, self.nick) 
+        self.rspd = Response(self.chat_log, self.nick) 
         self.server_reply = {'311':self.rspd.whois_user_repl, 
                              '319':self.rspd.whois_chan_repl, 
                              '353':self.rspd.names_repl,      
@@ -101,7 +102,7 @@ class Client(Frame):
            List all nicks visible on channel.
         ''' 
         if not chan:
-            self.lb.insert(END, self._names.__doc__)
+            self.chat_log.insert(END, self._names.__doc__ + '\n')
             return
         query = 'NAMES %s\r\n' % chan
         self.client.sendall(query)
@@ -112,7 +113,7 @@ class Client(Frame):
            Query information about a user.
         '''
         if not query:
-            self.lb.insert(END, self._whois.__doc__)
+            self.chat_log.insert(END, self._whois.__doc__ + '\n')
             return
         query = 'WHOIS %s\r\n' % query
         self.client.sendall(query)
@@ -159,7 +160,7 @@ class Client(Frame):
                L = Information about current server connections
         '''
         if not flags:
-            self.lb.insert(END, self._stats.__doc__)
+            self.chat_log.insert(END, self._stats.__doc__ + '\n')
             return
         query = 'STATS %s %s\r\n' % (flags, self.server)
         self.client.sendall(query)
@@ -179,7 +180,7 @@ class Client(Frame):
            Allows a client to start listening on the specified channel
         '''
         if not chan:
-            self.lb.insert(END, self._join.__doc__)
+            self.chat_log.insert(END, self._join.__doc__ + '\n')
             return
         self._part('#' + self.channel)
         chan_join = 'JOIN %s\r\n' % chan
@@ -192,7 +193,7 @@ class Client(Frame):
            Leave a channels active user's list.
         '''
         if not chan:
-            self.lb.insert(END, self._part.__doc__)
+            self.chat_log.insert(END, self._part.__doc__ + '\n')
             return
         chan_part = 'PART %s\r\n' % chan
         self.client.sendall(chan_part)
@@ -209,7 +210,7 @@ class Client(Frame):
                b = block all channel info
         '''                                              
         if not flags:
-            self.lb.insert(END, self._noise.__doc__)
+            self.chat_log.insert(END, self._noise.__doc__ + '\n')
             return
         elif flags == 's':
             self.verbose = True
@@ -222,7 +223,7 @@ class Client(Frame):
            Blocks the chat from the nick supplied.
         '''
         if not nick:
-            self.lb.insert(END, self._block.__doc__)
+            self.chat_log.insert(END, self._block.__doc__ + '\n')
             return
         if nick not in self.blocked:
             self.blocked.append(nick)
@@ -233,7 +234,7 @@ class Client(Frame):
            Unblocks chat from a nick thats currently being blocked.
         '''
         if not nick:
-            self.lb.insert(END, self._unblock.__doc__)
+            self.chat_log.insert(END, self._unblock.__doc__ + '\n')
             return
         if nick in self.blocked:
             self.blocked.remove(nick)   
@@ -244,7 +245,7 @@ class Client(Frame):
            Prints ou the topic for the supplied channel.
         '''
         if not chan:
-            self.lb.insert(END, self._topic.__doc__)
+            self.chat_log.insert(END, self._topic.__doc__ + '\n')
             return
         topic = 'TOPIC %s\r\n' % chan
         self.client.sendall(topic)
@@ -255,7 +256,7 @@ class Client(Frame):
            Returns the version of program that the server is using.
         '''
         if not server:
-            self.lb.insert(END, self._version.__doc__)
+            self.chat_log.insert(END, self._version.__doc__ + '\n')
             return
         ver_chk = 'VERSION %s\r\n' % server
         self.client.sendall(ver_chk)
@@ -268,7 +269,7 @@ class Client(Frame):
            currently connected to.
         '''
         if not query:
-            self.lb.insert(END, 'You are currently connected to server <%s> and in channel <%s>' % (self.server, self.channel))
+            self.chat_log.insert(END, 'You are currently connected to server <%s> and in channel <%s>\n' % (self.server, self.channel))
 
     def _blocklist(self, nick=None):
         '''Usage: /BLOCKLIST -->
@@ -276,7 +277,7 @@ class Client(Frame):
            Shows all the nicks currently being blocked.
         '''
         if not nick:
-            self.lb.insert(END, 'Blocked Nicks: %s' % str(self.blocked))
+            self.chat_log.insert(END, 'Blocked Nicks: %s\n' % str(self.blocked))
 
     def _nick(self, nick=None):
         '''Usage /NICK <nick> -->
@@ -284,7 +285,7 @@ class Client(Frame):
            Registers the supplied nick with services.
         '''
         if not nick:
-            self.lb.insert(END, self._nick.__doc__)
+            self.chat_log.insert(END, self._nick.__doc__ + '\n')
             return
         self.nick = nick
         ident = "NICK %s\r\n" % self.nick
@@ -297,7 +298,7 @@ class Client(Frame):
            Returns information about a nick that doesn't exist anymore.
         '''
         if not nick:
-            self.lb.insert(END, self._whowas.__doc__)
+            self.chat_log.insert(END, self._whowas.__doc__ + '\n')
             return
         whowas_msg = "WHOWAS %s\r\n" % nick
         self.client.sendall(whowas_msg)
@@ -308,7 +309,7 @@ class Client(Frame):
            Returns a query of wikipedia for the supplied item.
         '''
         if not lookup:
-            self.lb.insert(END, self._whatis__doc__)
+            self.chat_log.insert(END, self._whatis__doc__ + '\n')
             return
         wiki_lookup(lookup)        
 
@@ -318,9 +319,9 @@ class Client(Frame):
            Prints out your current nick.
         '''
         if nick:
-            self.lb.insert(END, self._whoami.__doc__)
+            self.chat_log.insert(END, self._whoami.__doc__ + '\n')
             return
-        self.lb.insert(END, "You are currently known as => %s" % self.nick)
+        self.chat_log.insert(END, "You are currently known as => %s\n" % self.nick)
 
     def _list(self, chan=None):
         '''Usage: /LIST (optional <channel>) -->
@@ -340,14 +341,14 @@ class Client(Frame):
            Show help information for/on valid commands.
         '''
         if not cmd:
-            self.lb.insert(END, 'Commands: <<<' + ' - '.join(self.commands.keys()) + '>>>')
+            self.chat_log.insert(END, 'Commands: <<<' + ' - '.join(self.commands.keys()) + '>>>\n')
             return
         try:
             func_info = cmd.lower() 
-            self.lb.insert(END, self.commands[func_info].__doc__)
+            self.chat_log.insert(END, self.commands[func_info].__doc__ + '\n')
         except KeyError:
-            self.lb.insert(END, 'Server | Unknown Command!')
-            self.lb.insert(END, 'Type /HELP for list of commands')
+            self.chat_log.insert(END, 'Server | Unknown Command!\n')
+            self.chat_log.insert(END, 'Type /HELP for list of commands\n')
 
     def _pause(self, channel=None):
         '''Usage: /PAUSE -->
@@ -370,51 +371,50 @@ class Client(Frame):
     def input_handle(self, event):
         msg = self.entry.get()
         self.entry.delete(0, 'end')
-        if len(msg) > 0:
-            if msg[0] == '/':
-                msg = msg.split() + [None]
-                msg_cmd = msg[0][1:].lower()
-                command = self.commands.get(msg_cmd)
-                if command:
-                    command(msg[1])
-                else:
-                    self.lb.insert(END, "Server | Unknown Command!")
-                    self.lb.insert(END, "Type /HELP for list of commands")
-                    self.lb.insert(END, "or /HELP <command> for information on a valid command")
+        if msg[0] == '/':
+            msg = msg.split() + [None]
+            msg_cmd = msg[0][1:].lower()
+            command = self.commands.get(msg_cmd)
+            if command:
+                command(msg[1])
             else:
-                new_msg = 'privmsg %s :'  % self.channel + msg + '\r\n'
-                self.client.sendall(new_msg)
-                self.lb.insert(END, self.nick + ' | ' + msg)
+                self.chat_log.insert(END, "Server | Unknown Command!\n")
+                self.chat_log.insert(END, "Type /HELP for list of commands\n")
+                self.chat_log.insert(END, "or /HELP <command> for information on a valid command\n")
+        else:
+            new_msg = 'privmsg %s :'  % self.channel + msg + '\r\n'
+            self.client.sendall(new_msg)
+            self.chat_log.insert(END, self.nick + ' | ' + msg + '\n')
 
-    def chat_handle(self):       
+    def chat_handle(self):  # exit gracefully?      
         self.data = None
         ready = select.select([self.client], [], [], 0.3)
         if ready[0]:
             try:
                 self.data = self.client.recvfrom(1024)
             except socket.error:
-                self.lb.insert(END, "Bad Connection!")
+                self.chat_log.insert(END, "Bad Connection!\n")
                 return
         if self.data and len(self.data[0]) > 0:
             self.recv_msg = tuple(self.data[0].split())
             if self.recv_msg[0] == 'PING':
                 self.client.sendall('PONG ' + self.recv_msg[1] + '\r\n')
-                self.lb.insert(END, "Channel Ping@ ==> %s" % time.ctime())
+                self.chat_log.insert(END, "Channel Ping@ ==> %s\n" % time.ctime())
             else: 
                 if len(self.recv_msg) >= 3:
                     self.msg_handle()       
         elif self.data and len(self.data[0]) == 0:
-            self.lb.insert(END, "Connection Dropped!")
+            self.chat_log.insert(END, "Connection Dropped!\n")
             return
         self.update_idletasks()
-        self.scrn_loop = self.lb.after(1000, self.chat_handle)
+        self.scrn_loop = self.chat_log.after(1000, self.chat_handle)
     
     def msg_handle(self, join='', userlist=None):
         user, cmd, channel = self.recv_msg[:3]  
         back = self.recv_msg[3:]
         user = user.split('!')[0].strip(':')
         if user.endswith('.freenode.net') and not self.conn:
-            self.lb.insert(END, 'SUCCESSFULLY CONNECTED TO %s' % self.host)    
+            self.chat_log.insert(END, 'SUCCESSFULLY CONNECTED TO %s\n' % self.host)    
             self.server = user
             self.rspd.server = user
             self.conn = 1
@@ -427,18 +427,18 @@ class Client(Frame):
             except KeyError:
                 pass 
         if cmd == 'PRIVMSG' and user not in self.blocked and not self.paused:
-            self.lb.insert(END, "%s | %s" % (user, ' '.join(i for i in back).strip(':')))
+            self.chat_log.insert(END, "%s | %s\n" % (user, ' '.join(i for i in back).strip(':')))
         if cmd == 'JOIN':
             if user == self.nick:
                 namedata = 'NAMES #%s\r\n' % channel
                 self.client.sendall(namedata)
                 self.channel = channel
-                self.lb.insert(END, "SUCCESSFULLY JOINED %s" % channel)
-            elif user != self.nick: 
+                self.chat_log.insert(END, "SUCCESSFULLY JOINED %s\n" % channel)
+            elif user != self.nick: # and self.chat.verbose:
                 self.channel = channel
-                self.lb.insert(END, "%s | entered --> %s" % (user, channel))
+                self.chat_log.insert(END, "%s | entered --> %s\n" % (user, channel))
         if cmd == 'QUIT':
             if user == self.nick:
                 self.CHATTING = False                
-            elif user != self.nick:  
-                self.lb.insert(END, "%s | left --> %s" % (user, '#' + self.channel))
+            elif user != self.nick:  # and self.chat.verbose://handle verbos
+                self.chat_log.insert(END, "%s | left --> %s\n" % (user, '#' + self.channel))
