@@ -14,14 +14,16 @@ class Client(Frame):
         self.root = Tk()
         Frame.__init__(self, self.root) 
         self.pack()
-        scrollbar = Scrollbar(self)
-        scrollbar.pack(side=RIGHT, fill=Y)
+        self.scrollbar = Scrollbar(self)
+        self.scrollbar.pack(side=RIGHT, fill=Y)
         self.chat_log = Text(self, width=100, height=30, 
-                             wrap=WORD, yscrollcommand=scrollbar.set)
+                             bg="black", fg="chartreuse",
+                             wrap=WORD, yscrollcommand=self.scrollbar.set)
         self.chat_log.pack()
-        scrollbar.config(command=self.chat_log.yview)
+        self.scrollbar.config(command=self.chat_log.yview)
         self.scrn_loop = self.chat_log.after(1000, self.chat_handle)
-        self.entry = Entry(self)
+        self.entry = Entry(self, bg="black", fg="chartreuse", 
+                                 insertbackground="chartreuse")
         self.entry.bind('<Return>', self.input_handle)
         self.entry.pack(side=BOTTOM, fill=X)
 
@@ -108,6 +110,7 @@ class Client(Frame):
         ''' 
         if not chan:
             self.chat_log.insert(END, self._names.__doc__ + '\n')
+            self.chat_log.see(END)
             return
         query = 'NAMES %s\r\n' % chan
         self.client.sendall(query)
@@ -119,6 +122,7 @@ class Client(Frame):
         '''
         if not query:
             self.chat_log.insert(END, self._whois.__doc__ + '\n')
+            self.chat_log.see(END)
             return
         query = 'WHOIS %s\r\n' % query
         self.client.sendall(query)
@@ -166,6 +170,7 @@ class Client(Frame):
         '''
         if not flags:
             self.chat_log.insert(END, self._stats.__doc__ + '\n')
+            self.chat_log.see(END)
             return
         query = 'STATS %s %s\r\n' % (flags, self.server)
         self.client.sendall(query)
@@ -188,6 +193,7 @@ class Client(Frame):
         '''
         if not chan:
             self.chat_log.insert(END, self._join.__doc__ + '\n')
+            self.chat_log.see(END)
             return
         self._part('#' + self.channel)
         chan_join = 'JOIN %s\r\n' % chan
@@ -201,6 +207,7 @@ class Client(Frame):
         '''
         if not chan:
             self.chat_log.insert(END, self._part.__doc__ + '\n')
+            self.chat_log.see(END)
             return
         chan_part = 'PART %s\r\n' % chan
         self.client.sendall(chan_part)
@@ -218,6 +225,7 @@ class Client(Frame):
         '''                                              
         if not flags:
             self.chat_log.insert(END, self._noise.__doc__ + '\n')
+            self.chat_log.see(END)
             return
         elif flags == 's':
             self.verbose = True
@@ -231,6 +239,7 @@ class Client(Frame):
         '''
         if not nick:
             self.chat_log.insert(END, self._block.__doc__ + '\n')
+            self.chat_log.see(END)
             return
         if nick not in self.blocked:
             self.blocked.append(nick)
@@ -242,6 +251,7 @@ class Client(Frame):
         '''
         if not nick:
             self.chat_log.insert(END, self._unblock.__doc__ + '\n')
+            self.chat_log.see(END)
             return
         if nick in self.blocked:
             self.blocked.remove(nick)   
@@ -253,6 +263,7 @@ class Client(Frame):
         '''
         if not chan:
             self.chat_log.insert(END, self._topic.__doc__ + '\n')
+            self.chat_log.see(END)
             return
         topic = 'TOPIC %s\r\n' % chan
         self.client.sendall(topic)
@@ -264,6 +275,7 @@ class Client(Frame):
         '''
         if not server:
             self.chat_log.insert(END, self._version.__doc__ + '\n')
+            self.chat_log.see(END)
             return
         ver_chk = 'VERSION %s\r\n' % server
         self.client.sendall(ver_chk)
@@ -278,6 +290,7 @@ class Client(Frame):
         if not query:
             self.chat_log.insert(END, 'You are currently connected to server <%s> and in channel <%s>\n' 
                                        % (self.server, self.channel))
+            self.chat_log.see(END)
 
     def _blocklist(self, nick=None):
         '''Usage: /BLOCKLIST -->
@@ -286,6 +299,7 @@ class Client(Frame):
         '''
         if not nick:
             self.chat_log.insert(END, 'Blocked Nicks: %s\n' % str(self.blocked))
+            self.chat_log.see(END)
 
     def _nick(self, nick=None):
         '''Usage /NICK <nick> -->
@@ -294,6 +308,7 @@ class Client(Frame):
         '''
         if not nick:
             self.chat_log.insert(END, self._nick.__doc__ + '\n')
+            self.chat_log.see(END)
             return
         self.nick = nick
         ident = "NICK %s\r\n" % self.nick
@@ -307,6 +322,7 @@ class Client(Frame):
         '''
         if not nick:
             self.chat_log.insert(END, self._whowas.__doc__ + '\n')
+            self.chat_log.see(END)
             return
         whowas_msg = "WHOWAS %s\r\n" % nick
         self.client.sendall(whowas_msg)
@@ -318,6 +334,7 @@ class Client(Frame):
         '''
         if not lookup:
             self.chat_log.insert(END, self._whatis__doc__ + '\n')
+            self.chat_log.see(END)
             return
         wiki_lookup(lookup)        
 
@@ -328,9 +345,10 @@ class Client(Frame):
         '''
         if nick:
             self.chat_log.insert(END, self._whoami.__doc__ + '\n')
+            self.chat_log.see(END)
             return
         self.chat_log.insert(END, "You are currently known as => %s\n" % self.nick)
-
+        self.chat_log.see(END)
     def _list(self, chan=None):
         '''Usage: /LIST (optional <channel>) -->
 
@@ -350,13 +368,16 @@ class Client(Frame):
         '''
         if not cmd:
             self.chat_log.insert(END, 'Commands: <<<' + ' - '.join(self.commands.keys()) + '>>>\n')
+            self.chat_log.see(END)
             return
         try:
             func_info = cmd.lower() 
             self.chat_log.insert(END, self.commands[func_info].__doc__ + '\n')
+            self.chat_log.see(END)
         except KeyError:
             self.chat_log.insert(END, 'Server | Unknown Command!\n')
             self.chat_log.insert(END, 'Type /HELP for list of commands\n')
+            self.chat_log.see(END)
 
     def _pause(self, channel=None):
         '''Usage: /PAUSE -->
@@ -390,11 +411,13 @@ class Client(Frame):
                     self.chat_log.insert(END, "Server | Unknown Command!\n")
                     self.chat_log.insert(END, "Type /HELP for list of commands\n")
                     self.chat_log.insert(END, "or /HELP <command> for information on a valid command\n")
+                    self.chat_log.see(END)
             else:
                 new_msg = 'privmsg %s :'  % self.channel + msg + '\r\n'
                 self.client.sendall(new_msg)
                 line_spacing = ' ' * (16 - len(self.nick))
                 self.chat_log.insert(END, self.nick + line_spacing + '| ' + msg + '\n')
+                self.chat_log.see(END)
 
     def chat_handle(self):        
         self.data = None
@@ -404,18 +427,26 @@ class Client(Frame):
                 self.data = self.client.recvfrom(1024)
             except socket.error:
                 self.chat_log.insert(END, "Bad Connection!\n")
+                self.chat_log.see(END)
                 self.root.destroy()
                 return
         if self.data and len(self.data[0]) > 0:
             self.recv_msg = tuple(self.data[0].split())
             if self.recv_msg[0] == 'PING':
                 self.client.sendall('PONG ' + self.recv_msg[1] + '\r\n')
+                self.chat_log.insert(END, "Server          | ")
+                pos = float(self.chat_log.index(END)) - 1
+                self.chat_log.tag_add("server", str(pos), str(pos + 0.16))
+                self.chat_log.tag_config("server", background="chartreuse", 
+                                                   foreground="black")
                 self.chat_log.insert(END, "Channel Ping@ ==> %s\n" % time.ctime())
+                self.chat_log.see(END)
             else: 
                 if len(self.recv_msg) >= 3:
                     self.msg_handle()       
         elif self.data and len(self.data[0]) == 0:
             self.chat_log.insert(END, "Connection Dropped!\n")
+            self.chat_log.see(END)
             self.root.destroy()
             return
         self.update_idletasks()
@@ -441,19 +472,23 @@ class Client(Frame):
         if cmd == 'PRIVMSG' and user not in self.blocked and not self.paused:
             line_spacing = ' ' * (16 - len(user))
             self.chat_log.insert(END, user + line_spacing + "| %s\n" % ' '.join(i for i in back).strip(':'))
+            self.chat_log.see(END)
         if cmd == 'JOIN':
             if user == self.nick:
                 namedata = 'NAMES #%s\r\n' % channel
                 self.client.sendall(namedata)
                 self.channel = channel
                 self.chat_log.insert(END, "SUCCESSFULLY JOINED %s\n" % channel)
+                self.chat_log.see(END)
             elif user != self.nick: # and self.chat.verbose:
                 self.channel = channel
                 line_spacing = ' ' * (16 - len(user))
                 self.chat_log.insert(END, user + line_spacing + "| entered --> %s\n" % channel)
+                self.chat_log.see(END)
         if cmd == 'QUIT':
             if user == self.nick:
                 self.CHATTING = False                
             elif user != self.nick:  # and self.chat.verbose://handle verbos
                 line_spacing = ' ' * (16 - len(user)) 
                 self.chat_log.insert(END, user + line_spacing + "| left --> %s\n" % self.channel)
+                self.chat_log.see(END)
