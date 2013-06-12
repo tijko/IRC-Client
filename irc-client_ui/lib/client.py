@@ -11,7 +11,8 @@ from responses import Response
 class Client(Frame):
     
     def __init__(self, **kwargs):
-        Frame.__init__(self, Tk()) 
+        self.root = Tk()
+        Frame.__init__(self, self.root) 
         self.pack()
         scrollbar = Scrollbar(self)
         scrollbar.pack(side=RIGHT, fill=Y)
@@ -38,6 +39,7 @@ class Client(Frame):
             self.client.setblocking(0)
         except socket.error:
             self.chat_log.insert(END, 'Connection Failed! --> check host & port\n')
+            self.root.destroy()
             return
         if password:
             self.client.sendall('PASS %s\r\n' % password)
@@ -176,6 +178,8 @@ class Client(Frame):
         self.CHATTING = False
         q_signal = 'QUIT %s\r\n'
         self.client.sendall(q_signal) 
+        self.client.close()
+        self.root.destroy()
 
     def _join(self, chan=None):
         '''Usage: /JOIN <channel> -->
@@ -272,7 +276,8 @@ class Client(Frame):
            currently connected to.
         '''
         if not query:
-            self.chat_log.insert(END, 'You are currently connected to server <%s> and in channel <%s>\n' % (self.server, self.channel))
+            self.chat_log.insert(END, 'You are currently connected to server <%s> and in channel <%s>\n' 
+                                       % (self.server, self.channel))
 
     def _blocklist(self, nick=None):
         '''Usage: /BLOCKLIST -->
@@ -399,6 +404,7 @@ class Client(Frame):
                 self.data = self.client.recvfrom(1024)
             except socket.error:
                 self.chat_log.insert(END, "Bad Connection!\n")
+                self.root.destroy()
                 return
         if self.data and len(self.data[0]) > 0:
             self.recv_msg = tuple(self.data[0].split())
@@ -410,6 +416,7 @@ class Client(Frame):
                     self.msg_handle()       
         elif self.data and len(self.data[0]) == 0:
             self.chat_log.insert(END, "Connection Dropped!\n")
+            self.root.destroy()
             return
         self.update_idletasks()
         self.scrn_loop = self.chat_log.after(1000, self.chat_handle)
