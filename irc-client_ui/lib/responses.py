@@ -14,11 +14,13 @@ class Response(object):
     def whois_user_repl(self, user_data):
         server_repl = 'User: %s' % (user_data[1] + '@' + user_data[2] + '\n')
         self.screen.insert(END, server_repl)
+        self.screen.see(END)
 
     def whois_chan_repl(self, chan_data):
         server_repl = ('Real Name: %s \nServer: %s\n' %
                       (chan_data[0], chan_data[2].strip(':')))
         self.screen.insert(END, server_repl)
+        self.screen.see(END)
 
     def names_repl(self, userlist):
         if any(i.endswith('.freenode.net') for i in userlist[2:]):
@@ -28,6 +30,7 @@ class Response(object):
             for usr in userlist[2:]:
                 server_repl += ('  ~' + usr.strip(':@') + '\n')
             self.screen.insert(END, server_repl)
+            self.screen.see(END)
 
     def info_repl(self, server_data):
         skips = [self.server, self.nick, ':', '371', (':' + self.server)]
@@ -38,6 +41,7 @@ class Response(object):
                     pass
                 elif len(i) > 1:
                     self.screen.insert(END, i.strip(':') + '\n')
+                    self.screen.see(END)
 
     def links_repl(self, server_data):
         link_info = ' '.join(i.strip(':') for i in server_data[2:6])
@@ -47,47 +51,59 @@ class Response(object):
             link_info = 'HOPS: ' + link_info
         if '365' in server_data:
             self.screen.insert(END, link_info + '\n')
+            self.screen.see(END)
             return
         self.screen.insert(END, link_info + '\n')
+        self.screen.see(END)
 
     def perm_denied_repl(self, server_response):
         server_response = ' '.join(server_response).strip(':')
         self.screen.insert(END, server_response + '\n')
+        self.screen.see(END)
 
     def rate_lim_repl(self, server_response):
         server_response = ' '.join(server_response[1:]).strip(':')
         self.screen.insert(END, server_response + '\n')
+        self.screen.see(END)
 
     def server_com_repl(self, server_coms):
         skips = [self.nick, ':' + self.server]
         for com in [i for i in server_coms if i not in skips]:
             if not com.strip(':').isdigit():
                 self.screen.insert(END, '    > %s\n' % com)
+                self.screen.see(END)
 
     def server_con_repl(self, server_connections):
         server_connections = ' '.join(server_connections)
         self.screen.insert(END, server_connections + '\n')
+        self.screen.see(END)
 
     def server_utme_repl(self, server_data):
         server_data = ' '.join(server_data[:9]).strip(':')
         self.screen.insert(END, server_data + '\n')
+        self.screen.see(END)
 
     def clnt_auth_repl(self, client_data):
         client_data = ' '.join(client_data)
         self.screen.insert(END, client_data + '\n')
+        self.screen.see(END)
 
     def server_ver(self, server_data):
         self.screen.insert(END, 'Server Version: %s\n' % server_data[0])
+        self.screen.see(END)
 
     def server_aux(self, server_data):
         self.screen.insert(END, ' '.join(server_data) + '\n')
+        self.screen.see(END)
 
     def chan_topic(self, topic):
         self.screen.insert(END, 'Topic for %s\n' % (' '.join(topic)))
+        self.screen.see(END)
 
     def nick_inuse(self, msg):
         self.screen.insert(END, ' '.join(msg[:6]) + '\n')
         self.screen.insert(END, 'Use the /NICK <nick> command to choose a new nick\n')
+        self.screen.see(END)
 
     def whowas_repl(self, server_data):
         skips = [self.nick, ':' + self.server, '330', '369', '312', '314']
@@ -100,8 +116,10 @@ class Response(object):
                    ' ' + ''.join(msg[pos + 2]))
             pos += 3
             self.screen.insert(END, out + '\n')
+            self.screen.see(END)
 
     def list_repl(self, list_data):
         topic = ' '.join(list_data)
         self.screen.insert(END, "--" + topic.split(' :')[0] + "--\n")
         self.screen.insert(END, topic.split(' :')[1] + '\n')
+        self.screen.see(END)
