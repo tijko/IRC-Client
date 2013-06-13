@@ -36,5 +36,4 @@ the clients command options.
 
 #### Note
 
-There is a simple gui version made with `Tkinter`.  It still has some bugs being worked out and you need to edit the 
-main file for your user information.  Other than that it's fine if you want to use it.
+There is a simple gui version made with `Tkinter`.  It still has some bugs being worked out.  Other than that it's fine if you want to use it.
