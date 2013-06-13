@@ -17,13 +17,13 @@ class Client(Frame):
         self.scrollbar = Scrollbar(self)
         self.scrollbar.pack(side=RIGHT, fill=Y)
         self.chat_log = Text(self, width=100, height=30, 
-                             bg="black", fg="chartreuse",
+                             bg="black", fg="green2",
                              wrap=WORD, yscrollcommand=self.scrollbar.set)
         self.chat_log.pack()
         self.scrollbar.config(command=self.chat_log.yview)
         self.scrn_loop = self.chat_log.after(1000, self.chat_handle)
-        self.entry = Entry(self, bg="black", fg="chartreuse", 
-                                 insertbackground="chartreuse")
+        self.entry = Entry(self, bg="black", fg="green2", 
+                                 insertbackground="green2")
         self.entry.bind('<Return>', self.input_handle)
         self.entry.pack(side=BOTTOM, fill=X)
 
@@ -40,8 +40,8 @@ class Client(Frame):
             self.client.connect((self.host, port))
             self.client.setblocking(0)
         except socket.error:
+            self.server_response
             self.chat_log.insert(END, 'Connection Failed! --> check host & port\n')
-            self.root.destroy()
             return
         if password:
             self.client.sendall('PASS %s\r\n' % password)
@@ -103,12 +103,21 @@ class Client(Frame):
                          'unpause':self._unpause
                         }
 
+    @property
+    def server_response(self):   
+        self.chat_log.insert(END, "Server          | ")
+        pos = float(self.chat_log.index(END)) - 1
+        self.chat_log.tag_add("server", str(pos), str(pos + 0.16))
+        self.chat_log.tag_config("server", background="green2", 
+                                           foreground="black")
+
     def _names(self, chan=None):
         '''Usage: /NAMES <channel> --> 
 
            List all nicks visible on channel.
         ''' 
         if not chan:
+            self.server_response
             self.chat_log.insert(END, self._names.__doc__ + '\n')
             self.chat_log.see(END)
             return
@@ -121,6 +130,7 @@ class Client(Frame):
            Query information about a user.
         '''
         if not query:
+            self.server_response
             self.chat_log.insert(END, self._whois.__doc__ + '\n')
             self.chat_log.see(END)
             return
@@ -169,6 +179,7 @@ class Client(Frame):
                L = Information about current server connections
         '''
         if not flags:
+            self.server_response
             self.chat_log.insert(END, self._stats.__doc__ + '\n')
             self.chat_log.see(END)
             return
@@ -192,6 +203,7 @@ class Client(Frame):
            Allows a client to start listening on the specified channel
         '''
         if not chan:
+            self.server_response
             self.chat_log.insert(END, self._join.__doc__ + '\n')
             self.chat_log.see(END)
             return
@@ -206,6 +218,7 @@ class Client(Frame):
            Leave a channels active user's list.
         '''
         if not chan:
+            self.server_response
             self.chat_log.insert(END, self._part.__doc__ + '\n')
             self.chat_log.see(END)
             return
@@ -224,6 +237,7 @@ class Client(Frame):
                b = block all channel info
         '''                                              
         if not flags:
+            self.server_response
             self.chat_log.insert(END, self._noise.__doc__ + '\n')
             self.chat_log.see(END)
             return
@@ -238,6 +252,7 @@ class Client(Frame):
            Blocks the chat from the nick supplied.
         '''
         if not nick:
+            self.server_response
             self.chat_log.insert(END, self._block.__doc__ + '\n')
             self.chat_log.see(END)
             return
@@ -250,6 +265,7 @@ class Client(Frame):
            Unblocks chat from a nick thats currently being blocked.
         '''
         if not nick:
+            self.server_response
             self.chat_log.insert(END, self._unblock.__doc__ + '\n')
             self.chat_log.see(END)
             return
@@ -259,9 +275,10 @@ class Client(Frame):
     def _topic(self, chan=None):
         '''Usage: /TOPIC <channel> --> 
 
-           Prints ou the topic for the supplied channel.
+           Prints out the topic for the supplied channel.
         '''
         if not chan:
+            self.server_response
             self.chat_log.insert(END, self._topic.__doc__ + '\n')
             self.chat_log.see(END)
             return
@@ -274,6 +291,7 @@ class Client(Frame):
            Returns the version of program that the server is using.
         '''
         if not server:
+            self.server_response
             self.chat_log.insert(END, self._version.__doc__ + '\n')
             self.chat_log.see(END)
             return
@@ -288,6 +306,7 @@ class Client(Frame):
            currently connected to.
         '''
         if not query:
+            self.server_response
             self.chat_log.insert(END, 'You are currently connected to server <%s> and in channel <%s>\n' 
                                        % (self.server, self.channel))
             self.chat_log.see(END)
@@ -298,6 +317,7 @@ class Client(Frame):
            Shows all the nicks currently being blocked.
         '''
         if not nick:
+            self.server_response
             self.chat_log.insert(END, 'Blocked Nicks: %s\n' % str(self.blocked))
             self.chat_log.see(END)
 
@@ -307,6 +327,7 @@ class Client(Frame):
            Registers the supplied nick with services.
         '''
         if not nick:
+            self.server_response
             self.chat_log.insert(END, self._nick.__doc__ + '\n')
             self.chat_log.see(END)
             return
@@ -321,6 +342,7 @@ class Client(Frame):
            Returns information about a nick that doesn't exist anymore.
         '''
         if not nick:
+            self.server_response
             self.chat_log.insert(END, self._whowas.__doc__ + '\n')
             self.chat_log.see(END)
             return
@@ -333,10 +355,11 @@ class Client(Frame):
            Returns a query of wikipedia for the supplied item.
         '''
         if not lookup:
+            self.server_response
             self.chat_log.insert(END, self._whatis__doc__ + '\n')
             self.chat_log.see(END)
             return
-        wiki_lookup(lookup)        
+        #wiki_lookup(lookup)        
 
     def _whoami(self, nick=None):
         '''Usage: /WHOAMI -->
@@ -344,11 +367,14 @@ class Client(Frame):
            Prints out your current nick.
         '''
         if nick:
+            self.server_response
             self.chat_log.insert(END, self._whoami.__doc__ + '\n')
             self.chat_log.see(END)
             return
+        self.server_response
         self.chat_log.insert(END, "You are currently known as => %s\n" % self.nick)
         self.chat_log.see(END)
+
     def _list(self, chan=None):
         '''Usage: /LIST (optional <channel>) -->
 
@@ -367,16 +393,18 @@ class Client(Frame):
            Show help information for/on valid commands.
         '''
         if not cmd:
-            self.chat_log.insert(END, 'Commands: <<<' + ' - '.join(self.commands.keys()) + '>>>\n')
+            self.server_response
+            self.chat_log.insert(END, 'Commands <<<' + ' - '.join(self.commands.keys()) + '>>>\n')
             self.chat_log.see(END)
             return
         try:
             func_info = cmd.lower() 
+            self.server_response
             self.chat_log.insert(END, self.commands[func_info].__doc__ + '\n')
             self.chat_log.see(END)
         except KeyError:
-            self.chat_log.insert(END, 'Server | Unknown Command!\n')
-            self.chat_log.insert(END, 'Type /HELP for list of commands\n')
+            self.server_response
+            self.chat_log.insert(END, 'Unknown Command! Type /HELP for list of commands\n')
             self.chat_log.see(END)
 
     def _pause(self, channel=None):
@@ -408,9 +436,8 @@ class Client(Frame):
                 if command:
                     command(msg[1])
                 else:
-                    self.chat_log.insert(END, "Server | Unknown Command!\n")
-                    self.chat_log.insert(END, "Type /HELP for list of commands\n")
-                    self.chat_log.insert(END, "or /HELP <command> for information on a valid command\n")
+                    self.server_response
+                    self.chat_log.insert(END, "Unknown Command! Type /HELP for list of commands or /HELP <command> for information on a valid command\n")
                     self.chat_log.see(END)
             else:
                 new_msg = 'privmsg %s :'  % self.channel + msg + '\r\n'
@@ -426,28 +453,24 @@ class Client(Frame):
             try:
                 self.data = self.client.recvfrom(1024)
             except socket.error:
+                self.server_response
                 self.chat_log.insert(END, "Bad Connection!\n")
                 self.chat_log.see(END)
-                self.root.destroy()
                 return
         if self.data and len(self.data[0]) > 0:
             self.recv_msg = tuple(self.data[0].split())
             if self.recv_msg[0] == 'PING':
                 self.client.sendall('PONG ' + self.recv_msg[1] + '\r\n')
-                self.chat_log.insert(END, "Server          | ")
-                pos = float(self.chat_log.index(END)) - 1
-                self.chat_log.tag_add("server", str(pos), str(pos + 0.16))
-                self.chat_log.tag_config("server", background="chartreuse", 
-                                                   foreground="black")
+                self.server_response
                 self.chat_log.insert(END, "Channel Ping@ ==> %s\n" % time.ctime())
                 self.chat_log.see(END)
             else: 
                 if len(self.recv_msg) >= 3:
                     self.msg_handle()       
         elif self.data and len(self.data[0]) == 0:
+            self.server_response
             self.chat_log.insert(END, "Connection Dropped!\n")
             self.chat_log.see(END)
-            self.root.destroy()
             return
         self.update_idletasks()
         self.scrn_loop = self.chat_log.after(1000, self.chat_handle)
