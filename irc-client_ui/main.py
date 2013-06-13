@@ -1,22 +1,12 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
-from lib.client import Client
+from lib.login import Login
 
 
 def main():
-    user = ""
-    nick = ""
-    host = ""
-    password = "" 
-    port = 0
-    channel = ""
-    c = Client(user=user, 
-               nick=nick, 
-               host=host, 
-               port=port, 
-               channel=channel, 
-               password=password)
-    c.mainloop()
+    login = Login
+    login()
                     
 
 if __name__ == '__main__':
