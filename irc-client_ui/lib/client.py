@@ -12,17 +12,15 @@ class Client(Frame):
     
     def __init__(self, **kwargs):
         self.root = Tk()
-        Frame.__init__(self, self.root) 
-        self.pack()
-        self.scrollbar = Scrollbar(self)
+        self.scrollbar = Scrollbar(self.root)
         self.scrollbar.pack(side=RIGHT, fill=Y)
-        self.chat_log = Text(self, width=100, height=30, 
+        self.chat_log = Text(self.root, width=100, height=30, 
                              bg="black", fg="green2",
                              wrap=WORD, yscrollcommand=self.scrollbar.set)
         self.chat_log.pack()
         self.scrollbar.config(command=self.chat_log.yview)
         self.scrn_loop = self.chat_log.after(1000, self.chat_handle)
-        self.entry = Entry(self, bg="black", fg="green2", 
+        self.entry = Entry(self.root, bg="black", fg="green2", 
                                  insertbackground="green2")
         self.entry.bind('<Return>', self.input_handle)
         self.entry.pack(side=BOTTOM, fill=X)
@@ -53,7 +51,6 @@ class Client(Frame):
 
         self.blocked = list()
         self.paused = list() 
-        self.CHATTING = True
         self.rspd = Response(self.chat_log, self.nick) 
         self.server_reply = {'311':self.rspd.whois_user_repl, 
                              '319':self.rspd.whois_chan_repl, 
@@ -191,7 +188,6 @@ class Client(Frame):
 
            Ends a client session from server.
         '''
-        self.CHATTING = False
         q_signal = 'QUIT %s\r\n'
         self.client.sendall(q_signal) 
         self.client.close()
@@ -472,7 +468,7 @@ class Client(Frame):
             self.chat_log.insert(END, "Connection Dropped!\n")
             self.chat_log.see(END)
             return
-        self.update_idletasks()
+        self.root.update_idletasks()
         self.scrn_loop = self.chat_log.after(1000, self.chat_handle)
     
     def msg_handle(self, join='', userlist=None):
@@ -509,9 +505,7 @@ class Client(Frame):
                 self.chat_log.insert(END, user + line_spacing + "| entered --> %s\n" % channel)
                 self.chat_log.see(END)
         if cmd == 'QUIT':
-            if user == self.nick:
-                self.CHATTING = False                
-            elif user != self.nick:  # and self.chat.verbose://handle verbos
+            if user != self.nick:  # and self.chat.verbose://handle verbos
                 line_spacing = ' ' * (16 - len(user)) 
                 self.chat_log.insert(END, user + line_spacing + "| left --> %s\n" % self.channel)
                 self.chat_log.see(END)
