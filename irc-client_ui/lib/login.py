@@ -5,7 +5,7 @@ from Tkinter import *
 from client import Client
 
 
-class Login(Frame):
+class Login(object):
 
     def __init__(self):
         self.root = Tk()
