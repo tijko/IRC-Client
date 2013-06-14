@@ -196,14 +196,13 @@ class Client(object):
     def _join(self, chan=None):
         '''Usage: /JOIN <channel> -->
 
-           Allows a client to start listening on the specified channel
+           Allows a client to start communicating on the specified channel(Must "/PART" from any current channel).
         '''
-        if not chan:
+        if not chan or self.channel != None:
             self.server_response
             self.chat_log.insert(END, self._join.__doc__ + '\n')
             self.chat_log.see(END)
             return
-        self._part('#' + self.channel)
         chan_join = 'JOIN %s\r\n' % chan
         self.client.sendall(chan_join)
         self.channel = chan.strip('#')
@@ -218,6 +217,7 @@ class Client(object):
             self.chat_log.insert(END, self._part.__doc__ + '\n')
             self.chat_log.see(END)
             return
+        self.channel = None
         chan_part = 'PART %s\r\n' % chan
         self.client.sendall(chan_part)
 
@@ -328,6 +328,7 @@ class Client(object):
             self.chat_log.see(END)
             return
         self.nick = nick
+        self.rspd.nick = nick
         ident = "NICK %s\r\n" % self.nick
         self.client.sendall(ident)
         self._join('#' + self.channel)
@@ -482,8 +483,6 @@ class Client(object):
             self.conn = 1
         elif user.endswith('.freenode.net') and self.conn:
             try:
-                self.nick = channel 
-                self.rspd.nick = channel
                 reply = self.server_reply[cmd]
                 reply(back)
             except KeyError:
