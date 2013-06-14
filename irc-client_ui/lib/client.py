@@ -8,7 +8,7 @@ from Tkinter import *
 from responses import Response
                    
 
-class Client(Frame):
+class Client(object):
     
     def __init__(self, **kwargs):
         self.root = Tk()
