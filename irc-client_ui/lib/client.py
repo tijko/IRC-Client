@@ -12,52 +12,24 @@ class Client(object):
     
     def __init__(self, **kwargs):
         self.root = Tk()
-        self.scrollbar = Scrollbar(self.root)
-        self.scrollbar.pack(side=RIGHT, fill=Y)
-        self.chat_log = Text(self.root, width=100, height=30, 
-                             bg="black", fg="green2",
-                             wrap=WORD, yscrollcommand=self.scrollbar.set)
-        self.chat_log.pack()
-        self.scrollbar.config(command=self.chat_log.yview)
-        self.scrn_loop = self.chat_log.after(1000, self.chat_handle)
-        self.entry = Entry(self.root, bg="black", fg="green2", 
-                                 insertbackground="green2")
-        self.entry.bind('<Return>', self.input_handle)
-        self.entry.pack(side=BOTTOM, fill=X)
-
-        user = kwargs['user']
-        port = kwargs['port']
-        password = kwargs['password']
+        self.create_window
+        self.user = kwargs['user']
+        self.port = kwargs['port']
+        self.password = kwargs['password']
         self.channel = kwargs['channel']
         self.nick = kwargs['nick']
         self.host = kwargs['host']
-        userdata = 'USER %s %s servername :%s\r\n' % (self.nick, self.host, user)
-
-        self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        try:
-            self.client.connect((self.host, port))
-            self.client.setblocking(0)
-        except socket.error:
-            self.server_response
-            self.chat_log.insert(END, 'Connection Failed! --> check host & port\n')
-            return
-        if password:
-            self.client.sendall('PASS %s\r\n' % password)
-        self.client.sendall('NICK %s\r\n' % self.nick)
-        self.client.sendall(userdata)
-        self.client.sendall('JOIN #%s\r\n' % self.channel)
-        self.client.sendall('NAMES #%s\r\n' % self.channel)
-        self.conn = None
-
-        self.blocked = list()
-        self.paused = list() 
+        self.connect_to_host()
+        self.conn = False
+        self.paused = False
+        self.verbose = True
+        self.blocked = list()  
         self.rspd = Response(self.chat_log, self.nick) 
-        self.server_reply = {'311':self.rspd.whois_user_repl, 
+        self.server_reply = {'311':self.rspd.whois_user_repl,  
                              '319':self.rspd.whois_chan_repl, 
                              '353':self.rspd.names_repl,      
                              '371':self.rspd.info_repl,
                              '364':self.rspd.links_repl,
-
                              '481':self.rspd.perm_denied_repl,
                              '263':self.rspd.rate_lim_repl,
                              '212':self.rspd.server_com_repl,
@@ -99,14 +71,6 @@ class Client(object):
                          'pause':self._pause,
                          'unpause':self._unpause
                         }
-
-    @property
-    def server_response(self):   
-        self.chat_log.insert(END, "Server          | ")
-        pos = float(self.chat_log.index(END)) - 1
-        self.chat_log.tag_add("server", str(pos), str(pos + 0.16))
-        self.chat_log.tag_config("server", background="green2", 
-                                           foreground="black")
 
     def _names(self, chan=None):
         '''Usage: /NAMES <channel> --> 
@@ -196,7 +160,9 @@ class Client(object):
     def _join(self, chan=None):
         '''Usage: /JOIN <channel> -->
 
-           Allows a client to start communicating on the specified channel(Must "/PART" from any current channel).
+           Allows a client to start communicating on the specified channel
+
+           Must "/PART" from any current channel first.
         '''
         if not chan or self.channel != None:
             self.server_response
@@ -391,7 +357,8 @@ class Client(object):
         '''
         if not cmd:
             self.server_response
-            self.chat_log.insert(END, 'Commands <<<' + ' - '.join(self.commands.keys()) + '>>>\n')
+            new_msg = 'Commands <<' + ' - '.join(self.commands.keys()) + '>>\n'
+            self.chat_log.insert(END, new_msg)
             self.chat_log.see(END)
             return
         try:
@@ -401,7 +368,8 @@ class Client(object):
             self.chat_log.see(END)
         except KeyError:
             self.server_response
-            self.chat_log.insert(END, 'Unknown Command! Type /HELP for list of commands\n')
+            new_msg = 'Unknown Command! Type /HELP for a list of commands\n'
+            self.chat_log.insert(END, new_msg)
             self.chat_log.see(END)
 
     def _pause(self, channel=None):
@@ -411,16 +379,59 @@ class Client(object):
 
            "whatis" or the like.
         '''
-        if not channel and not self.paused:
-            self.paused = self.paused.append('pause')
+        if not channel:
+            self.paused = True
 
     def _unpause(self, channel=None):
         '''Usage: /UNPAUSE -->
 
            To lift the pause on a channel.
         '''
-        if not channel and self.paused:
-            self.paused = self.paused.pop(0)
+        if not channel:
+            self.paused = False
+
+    @property            
+    def create_window(self):
+        self.scrollbar = Scrollbar(self.root)
+        self.scrollbar.pack(side=RIGHT, fill=Y)
+        self.chat_log = Text(self.root, width=100, height=30, 
+                             bg="black", fg="green2",
+                             wrap=WORD, yscrollcommand=self.scrollbar.set)
+        self.chat_log.pack()
+        self.scrollbar.config(command=self.chat_log.yview)
+        self.scrn_loop = self.chat_log.after(1000, self.chat_handle)
+        self.entry = Entry(self.root, bg="black", fg="green2", 
+                                      insertbackground="green2")
+        self.entry.bind('<Return>', self.input_handle)
+        self.entry.pack(side=BOTTOM, fill=X)
+        
+    def connect_to_host(self):
+        self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
+            self.client.connect((self.host, self.port))
+            self.client.setblocking(0)
+            self.server_login()
+        except socket.error:
+            self.server_response
+            self.chat_log.insert(END, 'Connection Failed! --> check host & port\n')
+            return
+                    
+    def server_login(self):
+        if self.password:
+            self.client.sendall('PASS %s\r\n' % self.password) 
+        self.client.sendall('NICK %s\r\n' % self.nick)  
+        userdata = 'USER %s %s servername :%s\r\n' % (self.nick, self.host, self.user) 
+        self.client.sendall(userdata) 
+        self.client.sendall('JOIN #%s\r\n' % self.channel)  
+        self.client.sendall('NAMES #%s\r\n' % self.channel) 		
+
+    @property
+    def server_response(self):   
+        self.chat_log.insert(END, "Server          | ")
+        pos = float(self.chat_log.index(END)) - 1
+        self.chat_log.tag_add("server", str(pos), str(pos + 0.16))
+        self.chat_log.tag_config("server", background="green2", 
+                                           foreground="black")
 
     def input_handle(self, event):
         msg = self.entry.get()
@@ -433,8 +444,8 @@ class Client(object):
                 if command:
                     command(msg[1])
                 else:
-                    self.server_response
-                    self.chat_log.insert(END, "Unknown Command! Type /HELP for list of commands or /HELP <command> for information on a valid command\n")
+                    self.server_response 
+                    self.chat_log.insert(END, 'Unknown Command! Type /HELP for list of commands\n')
                     self.chat_log.see(END)
             else:
                 new_msg = 'privmsg %s :'  % self.channel + msg + '\r\n'
@@ -480,7 +491,7 @@ class Client(object):
             self.chat_log.insert(END, 'SUCCESSFULLY CONNECTED TO %s\n' % self.host)    
             self.server = user
             self.rspd.server = user
-            self.conn = 1
+            self.conn = True
         elif user.endswith('.freenode.net') and self.conn:
             try:
                 reply = self.server_reply[cmd]
@@ -488,8 +499,9 @@ class Client(object):
             except KeyError:
                 pass 
         if cmd == 'PRIVMSG' and user not in self.blocked and not self.paused:
-            line_spacing = ' ' * (16 - len(user))
-            self.chat_log.insert(END, user + line_spacing + "| %s\n" % ' '.join(i for i in back).strip(':'))
+            line_spacing = ' ' * (16 - len(user)) 
+            new_msg = user + line_spacing + "| %s\n" % ' '.join(i for i in back).strip(':')
+            self.chat_log.insert(END, new_msg)  
             self.chat_log.see(END)
         if cmd == 'JOIN':
             if user == self.nick:
@@ -498,13 +510,15 @@ class Client(object):
                 self.channel = channel
                 self.chat_log.insert(END, "SUCCESSFULLY JOINED %s\n" % channel)
                 self.chat_log.see(END)
-            elif user != self.nick: # and self.chat.verbose:
+            elif user != self.nick and self.verbose:
                 self.channel = channel
                 line_spacing = ' ' * (16 - len(user))
-                self.chat_log.insert(END, user + line_spacing + "| entered --> %s\n" % channel)
+                new_msg = user + line_spacing + "| entered --> %s\n" % channel
+                self.chat_log.insert(END, new_msg)
                 self.chat_log.see(END)
         if cmd == 'QUIT':
-            if user != self.nick:  # and self.chat.verbose://handle verbos
-                line_spacing = ' ' * (16 - len(user)) 
-                self.chat_log.insert(END, user + line_spacing + "| left --> %s\n" % self.channel)
+            if user != self.nick and self.verbose:
+                line_spacing = ' ' * (16 - len(user))
+                new_msg = user + line_spacing + "| left --> %s\n" % self.channel 
+                self.chat_log.insert(END, new_msg)
                 self.chat_log.see(END)
