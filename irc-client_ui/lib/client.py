@@ -390,7 +390,7 @@ class Client(object):
         if not channel:
             self.paused = False
 
-    @property            
+    @property
     def create_window(self):
         self.scrollbar = Scrollbar(self.root)
         self.scrollbar.pack(side=RIGHT, fill=Y)
@@ -399,7 +399,7 @@ class Client(object):
                              wrap=WORD, yscrollcommand=self.scrollbar.set)
         self.chat_log.pack()
         self.scrollbar.config(command=self.chat_log.yview)
-        self.scrn_loop = self.chat_log.after(1000, self.chat_handle)
+        self.scrn_loop = self.chat_log.after(500, self.chat_handle)
         self.entry = Entry(self.root, bg="black", fg="green2", 
                                       insertbackground="green2")
         self.entry.bind('<Return>', self.input_handle)
@@ -422,8 +422,8 @@ class Client(object):
         self.client.sendall('NICK %s\r\n' % self.nick)  
         userdata = 'USER %s %s servername :%s\r\n' % (self.nick, self.host, self.user) 
         self.client.sendall(userdata) 
-        self.client.sendall('JOIN #%s\r\n' % self.channel)  
-        self.client.sendall('NAMES #%s\r\n' % self.channel) 		
+        self.client.sendall('JOIN #%s\r\n' % self.channel.strip('#')) 
+        self.client.sendall('NAMES #%s\r\n' % self.channel.strip('#')) 		
 
     @property
     def server_response(self):   
@@ -479,7 +479,9 @@ class Client(object):
             self.server_response
             self.chat_log.insert(END, "Connection Dropped!\n")
             self.chat_log.see(END)
-            return
+            self.client.close()
+            self.conn = False
+            self.connect_to_host()
         self.root.update_idletasks()
         self.scrn_loop = self.chat_log.after(1000, self.chat_handle)
     
