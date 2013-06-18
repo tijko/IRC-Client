@@ -502,10 +502,12 @@ class Client(object):
             self.conn = True
         elif user.endswith('.freenode.net') and self.conn:
             try:
-                if cmd != '353' and cmd != '351':
+                if cmd != '353' and cmd != '005' and cmd != '250':
                     reply = self.server_reply[cmd]
                     reply(back)
-                elif cmd == '353' and self.cmd_names or cmd == '351' and self.cmd_ver:
+                elif (cmd == '353' and self.cmd_names or 
+                      cmd == '005' and self.cmd_ver or
+                      cmd == '250' and self.cmd_ver):
                     reply = self.server_reply[cmd]
                     reply(back)
                     self.cmd_names = False
