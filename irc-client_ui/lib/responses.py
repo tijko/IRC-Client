@@ -26,11 +26,12 @@ class Response(object):
         self.screen.see(END)
 
     def whois_chan_repl(self, chan_data):
-        server_repl = ('Real Name: %s \nServer: %s\n' %
-                      (chan_data[0], chan_data[2].strip(':')))
-        self.server_line
-        self.screen.insert(END, server_repl)
-        self.screen.see(END)
+        if len(chan_data) >= 3:
+            server_repl = ('Real Name: %s \nServer: %s\n' %
+                          (chan_data[0], chan_data[2].strip(':')))
+            self.server_line
+            self.screen.insert(END, server_repl)
+            self.screen.see(END)
 
     def names_repl(self, userlist):
         if any(i.endswith('.freenode.net') for i in userlist[2:]):
@@ -134,14 +135,15 @@ class Response(object):
         whowas_msg = ' '.join(i for i in server_data[:-3] if i not in skips)
         pos = 0
         msg = whowas_msg.split(' :')
-        self.server_line
-        while pos < len(msg):
-            out = ('\n' + msg[pos].split()[0] +
-                   ' ' + ''.join(msg[pos + 1]) +
-                   ' ' + ''.join(msg[pos + 2]))
-            pos += 3
-            self.screen.insert(END, out + '\n')
-            self.screen.see(END)
+        if len(msg) >= 5:
+            self.server_line
+            while pos < len(msg):
+                out = ('\n' + msg[pos].split()[0] +
+                       ' ' + ''.join(msg[pos + 1]) +
+                       ' ' + ''.join(msg[pos + 2]))
+                pos += 3
+                self.screen.insert(END, out + '\n')
+                self.screen.see(END)
 
     def list_repl(self, list_data):
         topic = ' '.join(list_data)
