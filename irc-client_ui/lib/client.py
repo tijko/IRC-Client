@@ -23,7 +23,9 @@ class Client(object):
         self.conn = False
         self.paused = False
         self.verbose = True
-        self.blocked = list()  
+        self.blocked = list() 
+        self.cmd_names = False
+        self.cmd_ver = False
         self.rspd = Response(self.chat_log, self.nick) 
         self.server_reply = {'311':self.rspd.whois_user_repl,  
                              '319':self.rspd.whois_chan_repl, 
@@ -83,6 +85,7 @@ class Client(object):
             self.chat_log.see(END)
             return
         query = 'NAMES %s\r\n' % chan
+        self.cmd_names = True
         self.client.sendall(query)
 
     def _whois(self, query=None):
@@ -258,6 +261,7 @@ class Client(object):
             self.chat_log.see(END)
             return
         ver_chk = 'VERSION %s\r\n' % server
+        self.cmd_ver = True
         self.client.sendall(ver_chk)
 
     def _whereami(self, query=None):
@@ -399,7 +403,7 @@ class Client(object):
                              wrap=WORD, yscrollcommand=self.scrollbar.set)
         self.chat_log.pack()
         self.scrollbar.config(command=self.chat_log.yview)
-        self.scrn_loop = self.chat_log.after(500, self.chat_handle)
+        self.scrn_loop = self.chat_log.after(100, self.chat_handle)
         self.entry = Entry(self.root, bg="black", fg="green2", 
                                       insertbackground="green2")
         self.entry.bind('<Return>', self.input_handle)
@@ -456,25 +460,27 @@ class Client(object):
 
     def chat_handle(self):        
         self.data = None
-        socket_data = select.select([self.client], [], [], 0.3)
+        socket_data = select.select([self.client], [], [], 0.01)
         if socket_data[0]:
             try:
-                self.data = self.client.recvfrom(1024)
+                self.data = self.client.recvfrom(4096)
             except socket.error:
                 self.server_response
                 self.chat_log.insert(END, "Bad Connection!\n")
                 self.chat_log.see(END)
                 return
         if self.data and len(self.data[0]) > 0:
-            self.recv_msg = tuple(self.data[0].split())
-            if self.recv_msg[0] == 'PING':
-                self.client.sendall('PONG ' + self.recv_msg[1] + '\r\n')
-                self.server_response
-                self.chat_log.insert(END, "Channel Ping@ ==> %s\n" % time.ctime())
-                self.chat_log.see(END)
-            else: 
-                if len(self.recv_msg) >= 3:
-                    self.msg_handle()       
+            for i in self.data[0].split('\r\n'):
+                if i:
+                    self.recv_msg = i.split()
+                    if self.recv_msg[0] == 'PING':
+                        self.client.sendall('PONG ' + self.recv_msg[1] + '\r\n')
+                        self.server_response
+                        self.chat_log.insert(END, "Channel Ping@ ==> %s\n" % time.ctime())
+                        self.chat_log.see(END)
+                    else: 
+                        if len(self.recv_msg) >= 3:
+                            self.msg_handle()       
         elif self.data and len(self.data[0]) == 0:
             self.server_response
             self.chat_log.insert(END, "Connection Dropped!\n")
@@ -483,7 +489,7 @@ class Client(object):
             self.conn = False
             self.connect_to_host()
         self.root.update_idletasks()
-        self.scrn_loop = self.chat_log.after(1000, self.chat_handle)
+        self.scrn_loop = self.chat_log.after(100, self.chat_handle)
     
     def msg_handle(self, join='', userlist=None):
         user, cmd, channel = self.recv_msg[:3]  
@@ -496,8 +502,14 @@ class Client(object):
             self.conn = True
         elif user.endswith('.freenode.net') and self.conn:
             try:
-                reply = self.server_reply[cmd]
-                reply(back)
+                if cmd != '353' and cmd != '351':
+                    reply = self.server_reply[cmd]
+                    reply(back)
+                elif cmd == '353' and self.cmd_names or cmd == '351' and self.cmd_ver:
+                    reply = self.server_reply[cmd]
+                    reply(back)
+                    self.cmd_names = False
+                    self.cmd_ver = False
             except KeyError:
                 pass 
         if cmd == 'PRIVMSG' and user not in self.blocked and not self.paused:
