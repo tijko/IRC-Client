@@ -19,7 +19,7 @@ class Client(object):
         self.channel = kwargs['channel']
         self.nick = kwargs['nick']
         self.host = kwargs['host']
-        self.connect_to_host()
+        self.connect_to_host
         self.conn = False
         self.paused = False
         self.verbose = True
@@ -71,7 +71,8 @@ class Client(object):
                          'whoami':self._whoami,
                          'list':self._list,
                          'pause':self._pause,
-                         'unpause':self._unpause
+                         'unpause':self._unpause,
+                         'reconnect':self._reconnect
                         }
 
     def _names(self, chan=None):
@@ -394,6 +395,19 @@ class Client(object):
         if not channel:
             self.paused = False
 
+    def _reconnect(self, channel=None):
+        '''Usage: /RECONNECT (optional <channel>) -->
+
+           Set-up connection from inside the chat window
+        '''
+        if not channel:
+            self.client.close()
+            self.connect_to_host
+        if channel:
+            self.channel = channel
+            self.client.close()
+            self.connect_to_host
+
     @property
     def create_window(self):
         self.scrollbar = Scrollbar(self.root)
@@ -408,7 +422,8 @@ class Client(object):
                                       insertbackground="green2")
         self.entry.bind('<Return>', self.input_handle)
         self.entry.pack(side=BOTTOM, fill=X)
-        
+
+    @property        
     def connect_to_host(self):
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
@@ -505,7 +520,7 @@ class Client(object):
             self.chat_log.see(END)
             self.client.close()
             self.conn = False
-            self.connect_to_host()
+            self.connect_to_host
         self.root.update_idletasks()
         self.scrn_loop = self.chat_log.after(100, self.chat_handle)
     
