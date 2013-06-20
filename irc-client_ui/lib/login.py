@@ -15,7 +15,7 @@ class Login(object):
                                                               column=0, 
                                                               padx=5, 
                                                               sticky="W")
-        self.host = Entry(self.root)
+        self.host = Entry(self.root, relief="ridge")
         self.host.grid(row=0, column=1, pady=5)
 
         self.port_label = Label(self.root, text="Port:").grid(row=1, 
@@ -61,9 +61,6 @@ class Login(object):
         host = self.host.get()
         self.host.delete(0, END)
 
-        port = int(self.port.get())
-        self.port.delete(0, END)
-
         channel = self.channel.get()
         self.channel.delete(0, END)
 
@@ -76,14 +73,19 @@ class Login(object):
         password = self.password.get()
         self.password.delete(0, END)
 
-        self.root.destroy()
-        client = Client(host=host, 
-                        port=port, 
-                        channel=channel, 
-                        user=user, 
-                        nick=nick, 
-                        password=password)
-        client.root.mainloop()
+        try:
+            port = int(self.port.get())
+            self.port.delete(0, END)
+            self.root.destroy()
+            client = Client(host=host, 
+                            port=port, 
+                            channel=channel, 
+                            user=user, 
+                            nick=nick, 
+                            password=password)
+            client.root.mainloop()
+        except ValueError:
+            self.port.insert(0, "Port must be an interger!")
 
     def cancel_session(self):
         self.root.destroy()
