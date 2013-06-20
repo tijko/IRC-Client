@@ -437,6 +437,39 @@ class Client(object):
         self.chat_log.tag_config("server", background="green2", 
                                            foreground="black")
 
+    @property
+    def user_response(self):
+        user_line = self.nick + ' ' * (16 - len(self.nick)) + '| '
+        self.chat_log.insert(END, user_line)
+        pos = float(self.chat_log.index(END)) - 1
+        self.chat_log.tag_add("user", str(pos), str(pos + 0.16))
+        self.chat_log.tag_config("user", background="turquoise1",
+                                         foreground="black")
+    
+    def peer_response(self, nick):
+        peer_line = nick + ' ' * (16 - len(nick)) + '| '
+        self.chat_log.insert(END, peer_line)
+        pos = float(self.chat_log.index(END)) - 1
+        self.chat_log.tag_add("peer_response", str(pos), str(pos + 0.16))
+        self.chat_log.tag_config("peer_response", background="magenta2",
+                                                  foreground="black")
+
+    def peer_enter(self, nick):
+        peer_line = nick + ' ' * (16 - len(nick)) + '| '
+        self.chat_log.insert(END, peer_line)
+        pos = float(self.chat_log.index(END)) - 1
+        self.chat_log.tag_add("peer_enter", str(pos), str(pos + 0.16))
+        self.chat_log.tag_config("peer_enter", background="red2",
+                                               foreground="black")
+
+    def peer_leave(self, nick):        
+        peer_line = nick + ' ' * (16 - len(nick)) + '| '
+        self.chat_log.insert(END, peer_line)
+        pos = float(self.chat_log.index(END)) - 1
+        self.chat_log.tag_add("peer_leave", str(pos), str(pos + 0.16))
+        self.chat_log.tag_config("peer_leave", background="royal blue",
+                                               foreground="black")
+
     def input_handle(self, event):
         msg = self.entry.get()
         self.entry.delete(0, 'end')
@@ -454,8 +487,8 @@ class Client(object):
             else:
                 new_msg = 'privmsg %s :'  % self.channel + msg + '\r\n'
                 self.client.sendall(new_msg)
-                line_spacing = ' ' * (16 - len(self.nick))
-                self.chat_log.insert(END, self.nick + line_spacing + '| ' + msg + '\n')
+                self.user_response
+                self.chat_log.insert(END, msg + '\n')
                 self.chat_log.see(END)
 
     def chat_handle(self):        
@@ -516,7 +549,8 @@ class Client(object):
                 pass 
         if cmd == 'PRIVMSG' and user not in self.blocked and not self.paused:
             line_spacing = ' ' * (16 - len(user)) 
-            new_msg = user + line_spacing + "| %s\n" % ' '.join(i for i in back).strip(':')
+            self.peer_response(user)
+            new_msg = "%s\n" % ' '.join(i for i in back).strip(':')
             self.chat_log.insert(END, new_msg)  
             self.chat_log.see(END)
         if cmd == 'JOIN':
@@ -528,13 +562,13 @@ class Client(object):
                 self.chat_log.see(END)
             elif user != self.nick and self.verbose:
                 self.channel = channel
-                line_spacing = ' ' * (16 - len(user))
-                new_msg = user + line_spacing + "| entered --> %s\n" % channel
+                self.peer_enter(user)
+                new_msg = "entered --> %s\n" % channel
                 self.chat_log.insert(END, new_msg)
                 self.chat_log.see(END)
         if cmd == 'QUIT':
             if user != self.nick and self.verbose:
-                line_spacing = ' ' * (16 - len(user))
-                new_msg = user + line_spacing + "| left --> %s\n" % self.channel 
+                self.peer_leave(user)
+                new_msg = "left --> %s\n" % self.channel 
                 self.chat_log.insert(END, new_msg)
                 self.chat_log.see(END)
