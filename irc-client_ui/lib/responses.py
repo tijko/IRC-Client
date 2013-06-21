@@ -149,5 +149,8 @@ class Response(object):
         topic = ' '.join(list_data)
         self.server_line 
         self.screen.insert(END, "--" + topic.split(' :')[0] + "--\n")
-        self.screen.insert(END, topic.split(' :')[1] + '\n')
+        try:
+            self.screen.insert(END, topic.split(' :')[1] + '\n')
+        except IndexError:
+            pass
         self.screen.see(END)
