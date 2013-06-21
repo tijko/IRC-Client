@@ -72,7 +72,8 @@ class Client(object):
                          'list':self._list,
                          'pause':self._pause,
                          'unpause':self._unpause,
-                         'reconnect':self._reconnect
+                         'reconnect':self._reconnect,
+                         'msg':self._usermsg
                         }
 
     def _names(self, chan=None):
@@ -398,7 +399,7 @@ class Client(object):
     def _reconnect(self, channel=None):
         '''Usage: /RECONNECT (optional <channel>) -->
 
-           Set-up connection from inside the chat window
+           Set-up connection from inside the chat window.
         '''
         if not channel:
             self.client.close()
@@ -408,6 +409,23 @@ class Client(object):
             self.client.close()
             self.connect_to_host
 
+    def _usermsg(self, msg, nick=None):
+        '''Usage: /MSG <nick> -->
+
+           Message a user off channel.
+        '''
+        if not nick:
+            self.prefix_response("Server")
+            self.chat_log.insert(END, self._usermsg.__doc__ + '\n')
+            self.chat_log.see(END)
+        else:
+            new_msg = "privmsg %s :" % nick + msg 
+            self.client.sendall(new_msg + '\r\n')
+            self.prefix_response(self.nick)
+            window_msg = nick + ": " + msg 
+            self.chat_log.insert(END, window_msg + '\n') 
+            self.chat_log.see(END)
+                            
     @property
     def create_window(self):
         self.scrollbar = Scrollbar(self.root)
@@ -473,13 +491,15 @@ class Client(object):
     def input_handle(self, event):
         msg = self.entry.get()
         self.entry.delete(0, 'end')
-        if len(msg) > 0:
+        if msg:
             if msg[0] == '/':
                 msg = msg.split() + [None]
                 msg_cmd = msg[0][1:].lower()
                 command = self.commands.get(msg_cmd)
-                if command:
+                if command and msg_cmd != "msg":
                     command(msg[1])
+                elif command and msg_cmd == "msg":
+                    command(' '.join(i for i in msg[2:-1]), msg[1])
                 else:
                     self.prefix_response("Server") 
                     self.chat_log.insert(END, 'Unknown Command! Type /HELP for list of commands\n')
@@ -503,17 +523,16 @@ class Client(object):
                 self.chat_log.see(END)
                 return
         if self.data and len(self.data[0]) > 0:
-            for i in self.data[0].split('\r\n'):
-                if i:
-                    self.recv_msg = i.split()
-                    if self.recv_msg[0] == 'PING':
-                        self.client.sendall('PONG ' + self.recv_msg[1] + '\r\n')
-                        self.prefix_response("Server")
-                        self.chat_log.insert(END, "Channel Ping@ ==> %s\n" % time.ctime())
-                        self.chat_log.see(END)
-                    else: 
-                        if len(self.recv_msg) >= 3:
-                            self.msg_handle()       
+            for i in [j for j in self.data[0].split('\r\n') if j]:
+                self.recv_msg = i.split()
+                if self.recv_msg[0] == 'PING':
+                    self.client.sendall('PONG ' + self.recv_msg[1] + '\r\n')
+                    self.prefix_response("Server")
+                    self.chat_log.insert(END, "Channel Ping@ ==> %s\n" % time.ctime())
+                    self.chat_log.see(END)
+                else: 
+                    if len(self.recv_msg) >= 3:
+                        self.msg_handle()       
         elif self.data and len(self.data[0]) == 0:
             self.prefix_response("Server")
             self.chat_log.insert(END, "Connection Dropped!\n")
@@ -551,6 +570,8 @@ class Client(object):
             line_spacing = ' ' * (16 - len(user)) 
             self.prefix_response(user, 'response')
             new_msg = "%s\n" % ' '.join(i for i in back).strip(':')
+            if channel == self.nick:
+                new_msg = user + ": " + new_msg
             self.chat_log.insert(END, new_msg)  
             self.chat_log.see(END)
         if cmd == 'JOIN':
