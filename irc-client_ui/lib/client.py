@@ -410,7 +410,7 @@ class Client(object):
             self.connect_to_host
 
     def _usermsg(self, msg, nick=None):
-        '''Usage: /MSG <nick> -->
+        '''Usage: /MSG <nick> <msg>-->
 
            Message a user off channel.
         '''
@@ -516,30 +516,30 @@ class Client(object):
         socket_data = select.select([self.client], [], [], 0.01)
         if socket_data[0]:
             try:
-                self.data = self.client.recvfrom(4096)
+                self.data = self.client.recvfrom(4096)[0]
             except socket.error:
                 self.prefix_response("Server")
                 self.chat_log.insert(END, "Bad Connection!\n")
                 self.chat_log.see(END)
                 return
-        if self.data and len(self.data[0]) > 0:
-            for i in [j for j in self.data[0].split('\r\n') if j]:
-                self.recv_msg = i.split()
-                if self.recv_msg[0] == 'PING':
-                    self.client.sendall('PONG ' + self.recv_msg[1] + '\r\n')
-                    self.prefix_response("Server")
-                    self.chat_log.insert(END, "Channel Ping@ ==> %s\n" % time.ctime())
-                    self.chat_log.see(END)
-                else: 
-                    if len(self.recv_msg) >= 3:
-                        self.msg_handle()       
-        elif self.data and len(self.data[0]) == 0:
-            self.prefix_response("Server")
-            self.chat_log.insert(END, "Connection Dropped!\n")
-            self.chat_log.see(END)
-            self.client.close()
-            self.conn = False
-            self.connect_to_host
+            if self.data:
+                for i in [j for j in self.data.split('\r\n') if j]:
+                    self.recv_msg = i.split()
+                    if self.recv_msg[0] == 'PING':
+                        self.client.sendall('PONG ' + self.recv_msg[1] + '\r\n')
+                        self.prefix_response("Server")
+                        self.chat_log.insert(END, "Channel Ping@ ==> %s\n" % time.ctime())
+                        self.chat_log.see(END)
+                    else: 
+                        if len(self.recv_msg) >= 3:
+                            self.msg_handle()       
+            else:
+                self.prefix_response("Server")
+                self.chat_log.insert(END, "Connection Dropped!\n")
+                self.chat_log.see(END)
+                self.client.close()
+                self.conn = False
+                self.connect_to_host
         self.root.update_idletasks()
         self.scrn_loop = self.chat_log.after(100, self.chat_handle)
     
