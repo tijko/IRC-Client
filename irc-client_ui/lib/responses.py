@@ -45,16 +45,10 @@ class Response(object):
             self.screen.see(END)
 
     def info_repl(self, server_data):
-        skips = [self.server, self.nick, ':', '371', (':' + self.server)]
-        if len(server_data) > 2:
-            server_data = ' '.join(i for i in server_data if i not in skips).split(' :')
+            server_data = ' '.join(i.strip(':') for i in server_data)
             self.server_line 
-            for i in server_data:
-                if '.freenode.net' in i and i[:3] != 'irc':
-                    pass
-                elif len(i) > 1:
-                    self.screen.insert(END, i.strip(':') + '\n')
-                    self.screen.see(END)
+            self.screen.insert(END, server_data + '\n')
+            self.screen.see(END)
 
     def links_repl(self, server_data):
         link_info = ' '.join(i.strip(':') for i in server_data[2:6])
