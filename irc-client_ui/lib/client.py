@@ -12,6 +12,7 @@ class Client(object):
     
     def __init__(self, **kwargs):
         self.root = Tk()
+        self.root.geometry("+400+165")
         self.create_window
         self.user = kwargs['user']
         self.port = kwargs['port']
@@ -166,14 +167,13 @@ class Client(object):
         '''Usage: /JOIN <channel> -->
 
            Allows a client to start communicating on the specified channel
-
-           Must "/PART" from any current channel first.
         '''
-        if not chan or self.channel != None:
+        if not chan:
             self.prefix_response("Server")
             self.chat_log.insert(END, self._join.__doc__ + '\n')
             self.chat_log.see(END)
             return
+        self._part(self.channel)
         chan_join = 'JOIN %s\r\n' % chan
         self.client.sendall(chan_join)
         self.channel = chan.strip('#')
@@ -303,7 +303,8 @@ class Client(object):
         self.rspd.nick = nick
         ident = "NICK %s\r\n" % self.nick
         self.client.sendall(ident)
-        self._join('#' + self.channel)
+        if self.channel:
+            self._join('#' + self.channel)
 
     def _whowas(self, nick=None):
         '''Usage: /WHOWAS <nick> -->
