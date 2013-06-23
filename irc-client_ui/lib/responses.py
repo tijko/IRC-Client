@@ -26,10 +26,12 @@ class Response(object):
         self.screen.see(END)
 
     def whois_chan_repl(self, chan_data):
-        if len(chan_data) >= 3:
-            server_repl = ('Real Name: %s \nServer: %s\n' %
-                          (chan_data[0], chan_data[2].strip(':')))
-            self.server_line 
+        if len(chan_data) == 2:
+            self.server_line
+            server_repl = ('Real Name: %s\n' % chan_data[0])
+            self.screen.insert(END, server_repl)
+            self.server_line
+            self.server_repl = ('Server: %s\n' % chan_data[1].strip(':'))
             self.screen.insert(END, server_repl)
             self.screen.see(END)
 
@@ -51,16 +53,7 @@ class Response(object):
             self.screen.see(END)
 
     def links_repl(self, server_data):
-        link_info = ' '.join(i.strip(':') for i in server_data[2:6])
-        if int(link_info[0]) < 1:
-            link_info = link_info[2:]
-        else:
-            link_info = 'HOPS: ' + link_info
-        if '365' in server_data:
-            self.server_line 
-            self.screen.insert(END, link_info + '\n')
-            self.screen.see(END)
-            return
+        link_info = ' '.join(i for i in server_data[3:])
         self.server_line 
         self.screen.insert(END, link_info + '\n')
         self.screen.see(END)
@@ -78,12 +71,9 @@ class Response(object):
         self.screen.see(END)
 
     def server_com_repl(self, server_coms):
-        skips = [self.nick, ':' + self.server]
         self.server_line 
-        for com in [i for i in server_coms if i not in skips]:
-            if not com.strip(':').isdigit():
-                self.screen.insert(END, '    > %s\n' % com)
-                self.screen.see(END)
+        self.screen.insert(END, '%s\n' % server_coms[0])
+        self.screen.see(END)
 
     def server_con_repl(self, server_connections):
         server_connections = ' '.join(server_connections)
@@ -123,21 +113,6 @@ class Response(object):
         self.screen.insert(END, ' '.join(msg[:6]) + '\n')
         self.screen.insert(END, 'Use the /NICK <nick> command to choose a new nick\n')
         self.screen.see(END)
-
-    def whowas_repl(self, server_data):
-        skips = [self.nick, ':' + self.server, '330', '369', '312', '314']
-        whowas_msg = ' '.join(i for i in server_data[:-3] if i not in skips)
-        pos = 0
-        msg = whowas_msg.split(' :')
-        if len(msg) >= 5:
-            self.server_line 
-            while pos < len(msg):
-                out = ('\n' + msg[pos].split()[0] +
-                       ' ' + ''.join(msg[pos + 1]) +
-                       ' ' + ''.join(msg[pos + 2]))
-                pos += 3
-                self.screen.insert(END, out + '\n')
-                self.screen.see(END)
 
     def list_repl(self, list_data):
         topic = ' '.join(list_data)
