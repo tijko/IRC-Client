@@ -46,7 +46,6 @@ class Client(object):
                              '332':self.rspd.chan_topic,
                              '433':self.rspd.nick_inuse,
                              '314':self.rspd.whois_user_repl,
-                             '330':self.rspd.whowas_repl,
                              '322':self.rspd.list_repl
                             }
 
