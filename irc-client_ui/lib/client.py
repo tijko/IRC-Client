@@ -439,7 +439,7 @@ class Client(object):
 
            use "/LOG off" to close the log. 
         '''
-        if not toggle or not any(["on", "off"]):
+        if not toggle or toggle not in ["on", "off"]:
             self.prefix_response("Server")
             self.chat_log.insert(END, self._log.__doc__ + '\n')
             self.chat_log.see(END)
