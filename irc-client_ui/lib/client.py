@@ -3,6 +3,7 @@
 
 import socket
 import time
+import os
 import select
 from Tkinter import *
 from responses import Response
@@ -27,6 +28,7 @@ class Client(object):
         self.blocked = list() 
         self.cmd_names = False
         self.cmd_ver = False
+        self.logging = False
         self.rspd = Response(self.chat_log, self.nick) 
         self.server_reply = {'311':self.rspd.whois_user_repl,  
                              '319':self.rspd.whois_chan_repl, 
@@ -71,9 +73,9 @@ class Client(object):
                          'whoami':self._whoami,
                          'list':self._list,
                          'pause':self._pause,
-                         'unpause':self._unpause,
                          'reconnect':self._reconnect,
-                         'msg':self._usermsg
+                         'msg':self._usermsg,
+                         'log':self._log
                         }
 
     def _names(self, chan=None):
@@ -160,6 +162,8 @@ class Client(object):
         q_signal = 'QUIT %s\r\n'
         self.client.sendall(q_signal) 
         self.client.close()
+        if self.logging:
+            self.log_file.close()
         self.root.destroy()
 
     def _join(self, chan=None):
@@ -378,22 +382,22 @@ class Client(object):
             self.chat_log.insert(END, new_msg)
             self.chat_log.see(END)
 
-    def _pause(self, channel=None):
-        '''Usage: /PAUSE -->
+    def _pause(self, toggle=None):
+        '''Usage: /PAUSE <(on/off)> -->
 
-           This will pause the channel's "chatter" if you want to use
+           This will pause the channel's "chatter"
 
-           "whatis" or the like.
+           Pass in "/PAUSE on" to turn on pause or
+
+           use "/PAUSE off" to turn off pause "unpause".
         '''
-        if not channel:
+        if not toggle or toggle not in ["on", "off"]:
+            self.prefix_response("Server")
+            self.chat_log.insert(END, self._pause.__doc__ + '\n')
+            self.chat_log.see(END)
+        if toggle == 'on':
             self.paused = True
-
-    def _unpause(self, channel=None):
-        '''Usage: /UNPAUSE -->
-
-           To lift the pause on a channel.
-        '''
-        if not channel:
+        if toggle == 'off':
             self.paused = False
 
     def _reconnect(self, channel=None):
@@ -410,7 +414,7 @@ class Client(object):
             self.connect_to_host
 
     def _usermsg(self, msg, nick=None):
-        '''Usage: /MSG <nick> <msg>-->
+        '''Usage: /MSG <nick> <msg> -->
 
            Message a user off channel.
         '''
@@ -426,6 +430,28 @@ class Client(object):
             self.chat_log.insert(END, window_msg + '\n') 
             self.chat_log.see(END)
                             
+    def _log(self, toggle=None):
+        '''Usage: /LOG <(on/off)> -->
+
+           Logs the chat in current channel to a file.
+
+           Pass in "/LOG on" to open the log or
+
+           use "/LOG off" to close the log. 
+        '''
+        if not toggle or not any(["on", "off"]):
+            self.prefix_response("Server")
+            self.chat_log.insert(END, self._log.__doc__ + '\n')
+            self.chat_log.see(END)
+        if toggle == 'on':
+            self.logging = True
+            self.log_file = open(os.path.join(os.environ['HOME'], 'chat_log.txt'), 'a')
+            self.log_file.write(' -- ' + time.ctime() + ' --\n')
+        if toggle == 'off':
+            if self.logging:
+                self.log_file.close()
+            self.logging = False 
+
     @property
     def create_window(self):
         self.scrollbar = Scrollbar(self.root)
@@ -510,6 +536,8 @@ class Client(object):
                 self.prefix_response(self.nick)
                 self.chat_log.insert(END, msg + '\n')
                 self.chat_log.see(END)
+                if self.logging:
+                    self.log_file.write(msg + '\n')
 
     def chat_handle(self):        
         self.data = None
@@ -574,6 +602,8 @@ class Client(object):
                 new_msg = user + ": " + new_msg
             self.chat_log.insert(END, new_msg)  
             self.chat_log.see(END)
+            if self.logging:
+                self.log_file.write(' '.join(i for i in back).strip(':') + '\n') 
         if cmd == 'JOIN':
             if user == self.nick:
                 namedata = 'NAMES #%s\r\n' % channel
