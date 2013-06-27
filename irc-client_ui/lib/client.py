@@ -29,7 +29,7 @@ class Client(object):
         self.cmd_names = False
         self.cmd_ver = False
         self.logging = False
-        self.rspd = Response(self.chat_log, self.nick) 
+        self.rspd = Response(self.chat_log, self.nick, self.prefix_response) 
         self.server_reply = {'311':self.rspd.whois_user_repl,  
                              '319':self.rspd.whois_chan_repl, 
                              '353':self.rspd.names_repl,      
