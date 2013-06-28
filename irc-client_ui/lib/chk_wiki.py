@@ -85,6 +85,3 @@ class Wiki(Thread):
                 else:
                     self.client.search = False
                     return
-        #self.client.search = False
-        #return
-
