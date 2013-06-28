@@ -5,7 +5,9 @@ import socket
 import time
 import os
 import select
+import Queue
 from Tkinter import *
+from chk_wiki import Wiki
 from responses import Response
                    
 
@@ -29,6 +31,7 @@ class Client(object):
         self.cmd_names = False
         self.cmd_ver = False
         self.logging = False
+        self.search = False
         self.rspd = Response(self.chat_log, self.nick, self.prefix_response) 
         self.server_reply = {'311':self.rspd.whois_user_repl,  
                              '319':self.rspd.whois_chan_repl, 
@@ -332,7 +335,19 @@ class Client(object):
             self.chat_log.insert(END, self._whatis.__doc__ + '\n')
             self.chat_log.see(END)
             return
-        #wiki_lookup(lookup)        
+        if not self.search:        
+            self.wiki_q = Queue.Queue()
+            self.wiki = Wiki(self, self.chat_log, self.prefix_response, 
+                                                    lookup, self.wiki_q)
+            self.wiki.start()
+            self.search = True
+        elif lookup.lower() == 'y':
+            self.wiki_q.put('y')
+        elif lookup.lower() == 'n':
+            self.wiki_q.put('n')
+            self.search = False
+        elif lookup.isdigit():
+            self.wiki_q.put(lookup)
 
     def _whoami(self, nick=None):
         '''Usage: /WHOAMI -->
