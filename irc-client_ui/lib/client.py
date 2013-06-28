@@ -329,7 +329,7 @@ class Client(object):
         '''
         if not lookup:
             self.prefix_response("Server")
-            self.chat_log.insert(END, self._whatis__doc__ + '\n')
+            self.chat_log.insert(END, self._whatis.__doc__ + '\n')
             self.chat_log.see(END)
             return
         #wiki_lookup(lookup)        
@@ -551,8 +551,8 @@ class Client(object):
                 self.chat_log.see(END)
                 return
             if self.data:
-                for i in [j for j in self.data.split('\r\n') if j]:
-                    self.recv_msg = i.split()
+                for i in [j.split() for j in self.data.split('\r\n') if j]:
+                    self.recv_msg = i
                     if self.recv_msg[0] == 'PING':
                         self.client.sendall('PONG ' + self.recv_msg[1] + '\r\n')
                         self.prefix_response("Server")
