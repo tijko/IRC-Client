@@ -31,12 +31,15 @@ class Response(object):
         if any(i.endswith('.freenode.net') for i in userlist[2:]):
             pass
         else:
-            server_repl = ('Users available on %s:\n' + '=' * 25 + '\n') % userlist[1]
-            for usr in userlist[2:]:
-                server_repl += ('  ~' + usr.strip(':@') + '\n')
-            self.prefix_line("Server") 
-            self.screen.insert(END, server_repl)
-            self.screen.see(END)
+            try:
+                server_repl = ('Users available on %s:\n' % userlist[1]) + '=' * 25 + '\n'
+                for usr in userlist[2:]:
+                    server_repl += ('  ~' + usr.strip(':@') + '\n')
+                self.prefix_line("Server") 
+                self.screen.insert(END, server_repl)
+                self.screen.see(END)
+            except IndexError:
+                pass
 
     def info_repl(self, server_data):
         server_data = ' '.join(i.strip(':') for i in server_data)
