@@ -16,6 +16,8 @@ class Wiki(Thread):
         self.client = client
         self.window = window
         self.prefix_line = prefix
+        self.search_index = None
+        self.expand = None
         self.query = query
         self.wiki_q = wiki_q
 
@@ -44,17 +46,19 @@ class Wiki(Thread):
             while not self.wiki_q.queue:
                 current = time.time()
                 try:
-                    search_index = self.wiki_q.get_nowait()
+                    self.search_index = self.wiki_q.get_nowait()
                     break
                 except Queue.Empty:
                     pass
                 if (current - limit) > 300:
                     self.client.search = False
                     return
-            if search_index == 'n':
+            if not self.search_index:
+                self.search_index = self.wiki_q.get_nowait()
+            if self.search_index == 'n':
                 return
             else:
-                self.query = a_tags[int(search_index) - 1]['href'].split('/')[-1]
+                self.query = a_tags[int(self.search_index) - 1]['href'].split('/')[-1]
                 self.wiki_lookup()
         else:
             while True:
@@ -74,15 +78,18 @@ class Wiki(Thread):
                 while not self.wiki_q.queue:
                     current = time.time()
                     try:
-                        expand = self.wiki_q.get_nowait()
+                        self.expand = self.wiki_q.get_nowait()
                         break
                     except Queue.Empty:
                         pass
                     if (current - limit) > 300:
                         self.client.search = False
                         return
-                if expand == 'y':
+                if not self.expand:
+                    self.expand = self.wiki_q.get_nowait()
+                if self.expand == 'y':
                     page += 1
                 else:
                     self.client.search = False
                     return
+
