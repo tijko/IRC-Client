@@ -35,7 +35,9 @@ class Wiki(Thread):
                 tag_line = "[%d] -- %s\n" % (a_tags.index(tag) + 1, tag['href'])
                 self.window.insert(END, tag_line)
                 self.window.see(END)
+            self.prefix_line("Server")
             self.window.insert(END, "Do you want to do a look-up on any of these?\n")
+            self.prefix_line("Server")
             self.window.insert(END, "Enter '/WHATIS #from_above' or '/WHATIS n'\n")
             self.window.see(END)
             limit = time.time()
@@ -50,7 +52,6 @@ class Wiki(Thread):
                     self.client.search = False
                     return
             if search_index == 'n':
-                self.client.search = False
                 return
             else:
                 self.query = a_tags[int(search_index) - 1]['href'].split('/')[-1]
