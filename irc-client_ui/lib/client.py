@@ -16,20 +16,18 @@ class Client(object):
     def __init__(self, **kwargs):
         self.root = Tk()
         self.root.geometry("+400+165")
-        self.create_window
         self.user = kwargs['user']
         self.port = kwargs['port']
         self.password = kwargs['password']
         self.channel = kwargs['channel']
         self.nick = kwargs['nick']
         self.host = kwargs['host']
+        self.create_window
         self.connect_to_host
         self.conn = False
         self.paused = False
         self.verbose = True
         self.blocked = list() 
-        self.cmd_names = False
-        self.cmd_ver = False
         self.logging = False
         self.search = False
         self.rspd = Response(self.chat_log, self.nick, self.prefix_response) 
@@ -182,7 +180,9 @@ class Client(object):
             self.chat_log.insert(END, self._join.__doc__ + '\n')
             self.chat_log.see(END)
             return
-        self._part(self.channel)
+        if self.channel:
+            self._part(self.channel)
+        self.conn = False
         chan_join = 'JOIN %s\r\n' % chan
         self.client.sendall(chan_join)
         self.channel = chan.strip('#')
@@ -313,7 +313,7 @@ class Client(object):
         ident = "NICK %s\r\n" % self.nick
         self.client.sendall(ident)
         if self.channel:
-            self._join('#' + self.channel)
+            self._join(self.channel)
 
     def _whowas(self, nick=None):
         '''Usage: /WHOWAS <nick> -->
@@ -423,6 +423,7 @@ class Client(object):
 
            Set-up connection from inside the chat window.
         '''
+        self.conn = False
         if not channel:
             self.client.close()
             self.connect_to_host
@@ -484,6 +485,8 @@ class Client(object):
                                       insertbackground="green2")
         self.entry.bind('<Return>', self.input_handle)
         self.entry.pack(side=BOTTOM, fill=X)
+        self.chat_log.insert(END, 'ATTEMPTING TO CONNECT TO %s #%s\n' % (self.host, self.channel))
+        self.chat_log.see(END)
 
     @property        
     def connect_to_host(self):
@@ -504,7 +507,6 @@ class Client(object):
         userdata = 'USER %s %s servername :%s\r\n' % (self.nick, self.host, self.user) 
         self.client.sendall(userdata) 
         self.client.sendall('JOIN #%s\r\n' % self.channel.strip('#')) 
-        self.client.sendall('NAMES #%s\r\n' % self.channel.strip('#')) 		
 
     def prefix_response(self, prefix_name, peer_state=None):   
         prefix = prefix_name + ' ' * (16 - len(prefix_name)) + '| '
@@ -601,25 +603,17 @@ class Client(object):
         user, cmd, channel = self.recv_msg[:3]  
         back = self.recv_msg[3:]
         user = user.split('!')[0].strip(':')
-        if user.endswith('.freenode.net') and not self.conn:
-            self.chat_log.insert(END, 'SUCCESSFULLY CONNECTED TO %s\n' % self.host)    
+        if user.endswith('.freenode.net'): 
             self.server = user
             self.rspd.server = user
-            self.conn = True
-        elif user.endswith('.freenode.net') and self.conn:
-            try:
-                if cmd != '353' and cmd != '005' and cmd != '250':
+            if self.conn:
+                try:
                     reply = self.server_reply[cmd]
                     reply(back)
-                elif (cmd == '353' and self.cmd_names or 
-                      cmd == '005' and self.cmd_ver or
-                      cmd == '250' and self.cmd_ver):
-                    reply = self.server_reply[cmd]
-                    reply(back)
-                    self.cmd_names = False
-                    self.cmd_ver = False
-            except KeyError:
-                pass 
+                except KeyError:
+                    pass 
+            if cmd == '366':
+                self.conn = True
         if cmd == 'PRIVMSG' and user not in self.blocked and not self.paused:
             line_spacing = ' ' * (16 - len(user)) 
             new_msg = "%s\n" % ' '.join(i for i in back).strip(':')
@@ -636,9 +630,9 @@ class Client(object):
                 self.log_file.write(' '.join(i for i in back).strip(':') + '\n') 
         if cmd == 'JOIN':
             if user == self.nick:
-                namedata = 'NAMES #%s\r\n' % channel
-                self.client.sendall(namedata)
                 self.channel = channel
+                if not self.conn:
+                    self.chat_log.insert(END, 'SUCCESSFULLY CONNECTED TO %s\n' % self.host)
                 self.chat_log.insert(END, "SUCCESSFULLY JOINED %s\n" % channel)
                 self.chat_log.see(END)
             elif user != self.nick and self.verbose:
