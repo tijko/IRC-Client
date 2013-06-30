@@ -163,8 +163,11 @@ class Client(object):
            Ends a client session from server.
         '''
         q_signal = 'QUIT %s\r\n'
-        self.client.sendall(q_signal) 
-        self.client.close()
+        try:
+            self.client.sendall(q_signal) 
+            self.client.close()
+        except socket.error:
+            pass
         if self.logging:
             self.log_file.close()
         self.root.destroy()
@@ -524,6 +527,14 @@ class Client(object):
                 self.chat_log.tag_add("peer_enter", str(pos), str(pos + 0.16))
                 self.chat_log.tag_config("peer_enter", background="red2",
                                                         foreground="black")
+            elif peer_state == 'directed':
+                self.chat_log.tag_add("peer_directed", str(pos), str(pos + 0.16))
+                self.chat_log.tag_config("peer_directed", background="violetred1",
+                                                           foreground="black")
+            elif peer_state == 'private':
+                self.chat_log.tag_add("peer_private", str(pos), str(pos + 0.16))
+                self.chat_log.tag_config("peer_private", background="purple",
+                                                          foreground="black")
             else:
                 self.chat_log.tag_add("peer_leave", str(pos), str(pos + 0.16))
                 self.chat_log.tag_config("peer_leave", background="royal blue",
@@ -611,10 +622,14 @@ class Client(object):
                 pass 
         if cmd == 'PRIVMSG' and user not in self.blocked and not self.paused:
             line_spacing = ' ' * (16 - len(user)) 
-            self.prefix_response(user, 'response')
             new_msg = "%s\n" % ' '.join(i for i in back).strip(':')
-            if channel == self.nick:
+            if new_msg.startswith(self.nick) and channel != self.nick:
+                self.prefix_response(user, 'directed')
+            elif channel == self.nick:
+                self.prefix_response(user, 'private')
                 new_msg = user + ": " + new_msg
+            else:
+                self.prefix_response(user, 'response')
             self.chat_log.insert(END, new_msg)  
             self.chat_log.see(END)
             if self.logging:
