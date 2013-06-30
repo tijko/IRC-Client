@@ -64,13 +64,16 @@ class Login(object):
         if os.path.isfile(self.PATH + 'login_data'):
             with open(self.PATH + 'login_data') as f:
                 login_data = f.read().split()
-            self.host.insert(0, login_data[0]) 
-            self.port.insert(0, int(login_data[1]))
-            self.channel.insert(0, login_data[2])
-            self.user.insert(0, login_data[3])
-            self.nick.insert(0, login_data[4])
-            self.password.insert(0, login_data[5])
-            self.chkbx.select()
+            try:
+                self.host.insert(0, login_data[0]) 
+                self.port.insert(0, int(login_data[1]))
+                self.channel.insert(0, login_data[2])
+                self.user.insert(0, login_data[3])
+                self.nick.insert(0, login_data[4])
+                self.password.insert(0, login_data[5])
+                self.chkbx.select()
+            except IndexError:
+                pass
 
     def login_credentials(self):
         try:
