@@ -43,7 +43,7 @@ class Wiki(Thread):
             self.window.insert(END, "Enter '/WHATIS #from_above' or '/WHATIS n'\n")
             self.window.see(END)
             limit = time.time()
-            while not self.wiki_q.queue:
+            while not self.search_index:
                 current = time.time()
                 try:
                     self.search_index = self.wiki_q.get_nowait()
@@ -53,8 +53,6 @@ class Wiki(Thread):
                 if (current - limit) > 300:
                     self.client.search = False
                     return
-            if not self.search_index:
-                self.search_index = self.wiki_q.get_nowait()
             if self.search_index == 'n':
                 return
             else:
@@ -75,7 +73,7 @@ class Wiki(Thread):
                 self.window.insert(END, "More? (y or n)\n")
                 self.window.see(END)
                 limit = time.time()
-                while not self.wiki_q.queue:
+                while not self.expand:
                     current = time.time()
                     try:
                         self.expand = self.wiki_q.get_nowait()
@@ -85,8 +83,6 @@ class Wiki(Thread):
                     if (current - limit) > 300:
                         self.client.search = False
                         return
-                if not self.expand:
-                    self.expand = self.wiki_q.get_nowait()
                 if self.expand == 'y':
                     page += 1
                 else:
