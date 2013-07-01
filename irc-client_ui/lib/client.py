@@ -599,7 +599,7 @@ class Client(object):
         self.root.update_idletasks()
         self.scrn_loop = self.chat_log.after(100, self.chat_handle)
     
-    def msg_handle(self, join='', userlist=None):
+    def msg_handle(self):
         user, cmd, channel = self.recv_msg[:3]  
         back = self.recv_msg[3:]
         user = user.split('!')[0].strip(':')
@@ -615,7 +615,6 @@ class Client(object):
             if cmd == '366':
                 self.conn = True
         if cmd == 'PRIVMSG' and user not in self.blocked and not self.paused:
-            line_spacing = ' ' * (16 - len(user)) 
             new_msg = "%s\n" % ' '.join(i for i in back).strip(':')
             if new_msg.startswith(self.nick) and channel != self.nick:
                 self.prefix_response(user, 'directed')
