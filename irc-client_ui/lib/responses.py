@@ -10,6 +10,8 @@ class Response(object):
         self.screen = screen
         self.nick = nick
         self.prefix_line = prefix
+        self.chan_names = list()
+        self.server_cmds = list()
 
     def whois_user_repl(self, user_data):
         server_repl = 'User: %s' % (user_data[1] + '@' + user_data[2] + '\n')
@@ -28,19 +30,17 @@ class Response(object):
             self.screen.see(END)
 
     def names_repl(self, userlist):
-        if any(i.endswith('.freenode.net') for i in userlist[2:]):
-            pass
-        else:
-            try:
-                server_repl = ('Users available on %s:\n' % userlist[1]) + '=' * 25 + '\n'
-                for usr in userlist[2:]:
-                    server_repl += ('  ~' + usr.strip(':@') + '\n')
-                self.prefix_line("Server") 
-                self.screen.insert(END, server_repl)
-                self.screen.see(END)
-            except IndexError:
-                pass
+        self.chan = userlist[1]
+        self.chan_names += [i.strip(':') for i in userlist[2:]]
 
+    def end_names_repl(self, server_end):
+        self.prefix_line("Server")
+        self.screen.insert(END, "Total Users in %s: %d\n" % 
+                           (self.chan, len(self.chan_names)))
+        self.screen.insert(END, "%s\n" % str(self.chan_names))
+        self.screen.see(END)
+        self.chan_names = list()
+        
     def info_repl(self, server_data):
         server_data = ' '.join(i.strip(':') for i in server_data)
         self.prefix_line("Server") 
@@ -66,9 +66,15 @@ class Response(object):
         self.screen.see(END)
 
     def server_com_repl(self, server_coms):
-        self.prefix_line("Server") 
-        self.screen.insert(END, '%s\n' % server_coms[0])
+        self.server_cmds.append(server_coms[0])
+
+    def server_com_end(self, server_end):
+        self.prefix_line("Server")
+        self.screen.insert(END, "Total Server Commands: %d\n" % 
+                                        len(self.server_cmds))
+        self.screen.insert(END, "%s\n" % str(self.server_cmds))
         self.screen.see(END)
+        self.server_cmds = list()
 
     def server_con_repl(self, server_connections):
         server_connections = ' '.join(server_connections)
