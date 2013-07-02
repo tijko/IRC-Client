@@ -24,7 +24,7 @@ class Client(object):
         self.host = kwargs['host']
         self.create_window
         self.connect_to_host
-        self.conn = False
+        self.conn = False                                 
         self.paused = False
         self.verbose = True
         self.blocked = list() 
@@ -49,7 +49,9 @@ class Client(object):
                              '332':self.rspd.chan_topic,
                              '433':self.rspd.nick_inuse,
                              '314':self.rspd.whois_user_repl,
-                             '322':self.rspd.list_repl
+                             '322':self.rspd.list_repl,
+                             '219':self.rspd.server_com_end,
+                             '366':self.rspd.end_names_repl
                             }
 
         self.commands = {'names':self._names, 
@@ -80,9 +82,8 @@ class Client(object):
                         }
 
     def _names(self, chan=None):
-        '''Usage: /NAMES <channel> --> 
-
-           List all nicks visible on channel.
+        '''
+           Usage: /NAMES <channel> --> List all nicks visible on channel.
         ''' 
         if not chan:
             self.prefix_response("Server")
@@ -94,9 +95,8 @@ class Client(object):
         self.client.sendall(query)
 
     def _whois(self, query=None):
-        '''Usage: /WHOIS <nick> --> 
-
-           Query information about a user.
+        '''
+           Usage: /WHOIS <nick> --> Query information about a user.
         '''
         if not query:
             self.prefix_response("Server")
@@ -107,9 +107,8 @@ class Client(object):
         self.client.sendall(query)
 
     def _info(self, srv=None):
-        '''Usage: /INFO (optional <server> --> 
-
-           Returns information that describes the server, 
+        '''
+           Usage: /INFO (optional <server> --> Returns information that describes the server, 
 
            optional parameter defaults to current server.
         '''
@@ -121,9 +120,8 @@ class Client(object):
             self.client.sendall(query)
 
     def _links(self, srv=None):
-        '''Usage: /LINKS --> 
-
-           Lists all of the servers currently linked to network.
+        '''
+           Usage: /LINKS --> Lists all of the servers currently linked to network.
         '''
         if srv is None:
             query = 'LINKS \r\n'
@@ -133,9 +131,8 @@ class Client(object):
             self.client.sendall(query)
 
     def _stats(self, flags=None):
-        '''Usage: /STATS <flag> -->
-
-           Shows statistical information on the server.
+        '''
+           Usage: /STATS <flag> --> Shows statistical information on the server.
 
            ## STAT-FLAGS ##:
 
@@ -156,9 +153,8 @@ class Client(object):
         self.client.sendall(query)
 
     def _quit(self, msg=None):
-        '''Usage: /QUIT (optional <message>) -->
-
-           Ends a client session from server.
+        '''
+           Usage: /QUIT (optional <message>) --> Ends a client session from server.
         '''
         q_signal = 'QUIT %s\r\n'
         try:
@@ -171,9 +167,8 @@ class Client(object):
         self.root.destroy()
 
     def _join(self, chan=None):
-        '''Usage: /JOIN <channel> -->
-
-           Allows a client to start communicating on the specified channel
+        '''
+           Usage: /JOIN <channel> --> Allows a client to start communicating on the specified channel
         '''
         if not chan:
             self.prefix_response("Server")
@@ -188,9 +183,8 @@ class Client(object):
         self.channel = chan.strip('#')
 
     def _part(self, chan=None):
-        '''Usage: /PART <channel> -->
-
-           Leave a channels active user's list.
+        '''
+           Usage: /PART <channel> --> Leave a channels active user's list.
         '''
         if not chan:
             self.prefix_response("Server")
@@ -202,9 +196,8 @@ class Client(object):
         self.client.sendall(chan_part)
 
     def _noise(self, flags=None):
-        '''Usage: /NOISE <flag> -->
-
-           Show or block the extra info for the current channel.
+        '''
+           Usage: /NOISE <flag> --> Show or block the extra info for the current channel.
 
            ## NOISE-FLAGS ##:
         
@@ -223,9 +216,8 @@ class Client(object):
             self.verbose = False
 
     def _block(self, nick=None): 
-        '''Usage: /BLOCK <nick> --> 
-           
-           Blocks the chat from the nick supplied.
+        '''
+           Usage: /BLOCK <nick> --> Blocks the chat from the nick supplied.
         '''
         if not nick:
             self.prefix_response("Server")
@@ -236,9 +228,8 @@ class Client(object):
             self.blocked.append(nick)
 
     def _unblock(self, nick=None):
-        '''Usage: /UNBLOCK <nick> -->
-
-           Unblocks chat from a nick thats currently being blocked.
+        '''
+           Usage: /UNBLOCK <nick> --> Unblocks chat from a nick thats currently being blocked.
         '''
         if not nick:
             self.prefix_response("Server")
@@ -249,9 +240,8 @@ class Client(object):
             self.blocked.remove(nick)   
 
     def _topic(self, chan=None):
-        '''Usage: /TOPIC <channel> --> 
-
-           Prints out the topic for the supplied channel.
+        '''
+           Usage: /TOPIC <channel> --> Prints out the topic for the supplied channel.
         '''
         if not chan:
             self.prefix_response("Server")
@@ -262,9 +252,8 @@ class Client(object):
         self.client.sendall(topic)
 
     def _version(self, server=None):
-        '''Usage: /VERSION <server> -->
-
-           Returns the version of program that the server is using.
+        '''
+           Usage: /VERSION <server> --> Returns the version of program that the server is using.
         '''
         if not server:
             self.prefix_response("Server")
@@ -276,9 +265,8 @@ class Client(object):
         self.client.sendall(ver_chk)
 
     def _whereami(self, query=None):
-        '''Usage: /WHEREAMI -->
-
-           This command will let you know which channel and server you are
+        '''
+           Usage: /WHEREAMI --> This command will let you know which channel and server you are
 
            currently connected to.
         '''
@@ -289,9 +277,8 @@ class Client(object):
             self.chat_log.see(END)
 
     def _blocklist(self, nick=None):
-        '''Usage: /BLOCKLIST -->
-
-           Shows all the nicks currently being blocked.
+        '''
+           Usage: /BLOCKLIST --> Shows all the nicks currently being blocked.
         '''
         if not nick:
             self.prefix_response("Server")
@@ -299,9 +286,8 @@ class Client(object):
             self.chat_log.see(END)
 
     def _nick(self, nick=None):
-        '''Usage /NICK <nick> -->
-
-           Registers the supplied nick with services.
+        '''
+           Usage /NICK <nick> --> Registers the supplied nick with services.
         '''
         if not nick:
             self.prefix_response("Server")
@@ -316,9 +302,8 @@ class Client(object):
             self._join(self.channel)
 
     def _whowas(self, nick=None):
-        '''Usage: /WHOWAS <nick> -->
-
-           Returns information about a nick that doesn't exist anymore.
+        '''
+           Usage: /WHOWAS <nick> --> Returns information about a nick that doesn't exist anymore.
         '''
         if not nick:
             self.prefix_response("Server")
@@ -329,9 +314,8 @@ class Client(object):
         self.client.sendall(whowas_msg)
 
     def _whatis(self, lookup=None):
-        '''Usage: /WHATIS <item> -->
-
-           Returns a query of wikipedia for the supplied item.
+        '''
+           Usage: /WHATIS <item> --> Returns a query of wikipedia for the supplied item.
         '''
         if not lookup:
             self.prefix_response("Server")
@@ -353,9 +337,8 @@ class Client(object):
             self.wiki_q.put(lookup)
 
     def _whoami(self, nick=None):
-        '''Usage: /WHOAMI -->
-    
-           Prints out your current nick.
+        '''
+           Usage: /WHOAMI --> Prints out your current nick.
         '''
         if nick:
             self.prefix_response("Server")
@@ -367,9 +350,8 @@ class Client(object):
         self.chat_log.see(END)
 
     def _list(self, chan=None):
-        '''Usage: /LIST (optional <channel>) -->
-
-           Will show all the channels available and their topic.
+        '''
+           Usage: /LIST (optional <channel>) --> Will show all the channels available and their topic.
         '''
         if not chan:
             lst_msg = "LIST\r\n"
@@ -379,9 +361,8 @@ class Client(object):
             self.client.sendall(lst_msg)
 
     def _help(self, cmd=None):
-        '''Usage: /HELP (optional <command>) --> 
-
-           Show help information for/on valid commands.
+        '''
+           Usage: /HELP (optional <command>) --> Show help information for/on valid commands.
         '''
         if not cmd:
             self.prefix_response("Server")
@@ -401,9 +382,8 @@ class Client(object):
             self.chat_log.see(END)
 
     def _pause(self, toggle=None):
-        '''Usage: /PAUSE <(on/off)> -->
-
-           This will pause the channel's "chatter"
+        '''
+           Usage: /PAUSE <(on/off)> --> This will pause the channel's "chatter"
 
            Pass in "/PAUSE on" to turn on pause or
 
@@ -419,9 +399,8 @@ class Client(object):
             self.paused = False
 
     def _reconnect(self, channel=None):
-        '''Usage: /RECONNECT (optional <channel>) -->
-
-           Set-up connection from inside the chat window.
+        '''
+           Usage: /RECONNECT (optional <channel>) --> Set-up connection from inside the chat window.
         '''
         self.conn = False
         if not channel:
@@ -433,9 +412,8 @@ class Client(object):
             self.connect_to_host
 
     def _usermsg(self, msg, nick=None):
-        '''Usage: /MSG <nick> <msg> -->
-
-           Message a user off channel.
+        '''
+           Usage: /MSG <nick> <msg> --> Message a user off channel.
         '''
         if not nick:
             self.prefix_response("Server")
@@ -450,9 +428,8 @@ class Client(object):
             self.chat_log.see(END)
                             
     def _log(self, toggle=None):
-        '''Usage: /LOG <(on/off)> -->
-
-           Logs the chat in current channel to a file.
+        '''
+           Usage: /LOG <(on/off)> --> Logs the chat in current channel to a file.
 
            Pass in "/LOG on" to open the log or
 
