@@ -85,6 +85,7 @@ class Wiki(Thread):
                         return
                 if self.expand == 'y':
                     page += 1
+                    self.expand = None
                 else:
                     self.client.search = False
                     return
