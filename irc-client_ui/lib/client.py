@@ -578,7 +578,7 @@ class Client(object):
     
     def msg_handle(self):
         user, cmd, channel = self.recv_msg[:3]  
-        back = self.recv_msg[3:]
+        back = [i.strip(':') for i in self.recv_msg[3:]]
         user = user.split('!')[0].strip(':')
         if user.endswith('.freenode.net'): 
             self.server = user
@@ -592,16 +592,35 @@ class Client(object):
             if cmd == '366':
                 self.conn = True
         if cmd == 'PRIVMSG' and user not in self.blocked and not self.paused:
-            new_msg = "%s\n" % ' '.join(i for i in back).strip(':')
-            if new_msg.startswith(self.nick) and channel != self.nick:
+            if back[0] == self.nick and channel != self.nick:
                 self.prefix_response(user, 'directed')
             elif channel == self.nick:
                 self.prefix_response(user, 'private')
-                new_msg = user + ": " + new_msg
+                back.insert(0, user + ': ')
             else:
                 self.prefix_response(user, 'response')
-            self.chat_log.insert(END, new_msg)  
-            self.chat_log.see(END)
+            if any('http://' in i for i in back):
+                pos = None
+                for i in back:
+                    if 'http://' in i:
+                        if pos:
+                            msg = ' ' + ' '.join(v for v in back[pos+1:back.index(i)]) + ' '
+                            self.chat_log.insert(END, msg)
+                            pos = back.index(i)
+                            self.chat_log.tag_config("link", underline=1)
+                            self.chat_log.insert(END, i, "link")
+                        else:
+                            pos = back.index(i)
+                            msg = ' ' + ' '.join(v for v in back[:pos]) + ' '
+                            self.chat_log.insert(END, msg)
+                            self.chat_log.tag_config("link", underline=1)
+                            self.chat_log.insert(END, i, "link")
+                self.chat_log.insert(END, ' ' + ' '.join(v for v in back[pos+1:]) + '\n')
+                self.chat_log.see(END)
+            else:
+                new_msg = "%s\n" % ' '.join(i for i in back)
+                self.chat_log.insert(END, new_msg)  
+                self.chat_log.see(END)
             if self.logging:
                 self.log_file.write(' '.join(i for i in back).strip(':') + '\n') 
         if cmd == 'JOIN':
