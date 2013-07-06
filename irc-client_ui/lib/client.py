@@ -458,12 +458,13 @@ class Client(object):
                              wrap=WORD, yscrollcommand=self.scrollbar.set)
         self.chat_log.pack()
         self.scrollbar.config(command=self.chat_log.yview)
-        self.scrn_loop = self.chat_log.after(100, self.chat_handle)
+        self.scrn_loop = self.chat_log.after(100, self.msg_buffer_chk)
         self.entry = Entry(self.root, bg="black", fg="green2", 
                                       insertbackground="green2")
         self.entry.bind('<Return>', self.input_handle)
         self.entry.pack(side=BOTTOM, fill=X)
-        self.chat_log.insert(END, 'ATTEMPTING TO CONNECT TO %s #%s\n' % (self.host, self.channel))
+        self.chat_log.insert(END, 'ATTEMPTING TO CONNECT TO %s #%s\n' % 
+                                              (self.host, self.channel))
         self.chat_log.see(END)
 
     @property        
@@ -472,12 +473,13 @@ class Client(object):
         try:
             self.client.connect((self.host, self.port))
             self.client.setblocking(0)
-            self.server_login()
+            self.server_login
         except socket.error:
             self.prefix_response("Server")
             self.chat_log.insert(END, 'Connection Failed! --> check host & port\n')
             return
-                    
+
+    @property                    
     def server_login(self):
         if self.password:
             self.client.sendall('PASS %s\r\n' % self.password) 
@@ -485,10 +487,6 @@ class Client(object):
         userdata = 'USER %s %s servername :%s\r\n' % (self.nick, self.host, self.user) 
         self.client.sendall(userdata) 
         self.client.sendall('JOIN #%s\r\n' % self.channel.strip('#')) 
-
-    def open_link(self, tk_event):
-        link = self.chat_log.tag_names(CURRENT)[0]
-        subprocess.Popen(["firefox", link])
         
     def prefix_response(self, prefix_name, peer_state=None):   
         prefix = prefix_name + ' ' * (16 - len(prefix_name)) + '| '
@@ -523,6 +521,36 @@ class Client(object):
                 self.chat_log.tag_add("peer_leave", str(pos), str(pos + 0.16))
                 self.chat_log.tag_config("peer_leave", background="royal blue",
                                                         foreground="black")
+                                                                               
+    def open_link(self, tk_event):
+        link = self.chat_log.tag_names(CURRENT)[0]
+        subprocess.Popen(["firefox", link])
+
+    def chat_msg(self, channel, user, msg):
+        if msg[0] == self.nick and channel != self.nick:
+            self.prefix_response(user, 'directed')
+        elif channel == self.nick:
+            self.prefix_response(user, 'private')
+            msg.insert(0, user + ': ')
+        else:
+            self.prefix_response(user, 'response')
+        for i in msg:
+            if 'http://' in i:
+                self.chat_log.tag_config(i, underline=1)
+                self.chat_log.tag_bind(i, "<Enter>", 
+                                       lambda e: self.chat_log.config(cursor="hand2"))
+                self.chat_log.tag_bind(i, "<Leave>", 
+                                       lambda e: self.chat_log.config(cursor=""))
+                self.chat_log.tag_bind(i, "<Button-1>", 
+                                       lambda e: self.open_link(e))
+                self.chat_log.insert(END, i, i)
+                self.chat_log.insert(END, ' ')
+            else:
+                self.chat_log.insert(END, i + ' ')
+        self.chat_log.insert(END, '\n')
+        self.chat_log.see(END)
+        if self.logging:
+            self.log_file.write(' '.join(i for i in msg).strip(':') + '\n') 		
 
     def input_handle(self, event):
         msg = self.entry.get()
@@ -549,7 +577,7 @@ class Client(object):
                 if self.logging:
                     self.log_file.write(msg + '\n')
 
-    def chat_handle(self):        
+    def msg_buffer_chk(self):        
         self.data = None
         socket_data = select.select([self.client], [], [], 0.01)
         if socket_data[0]:
@@ -579,11 +607,11 @@ class Client(object):
                 self.conn = False
                 self.connect_to_host
         self.root.update_idletasks()
-        self.scrn_loop = self.chat_log.after(100, self.chat_handle)
+        self.scrn_loop = self.chat_log.after(100, self.msg_buffer_chk)
     
     def msg_handle(self):
         user, cmd, channel = self.recv_msg[:3]  
-        back = [i.strip(':') for i in self.recv_msg[3:]]
+        msg = [i.strip(':') for i in self.recv_msg[3:]]
         user = user.split('!')[0].strip(':')
         if user.endswith('.freenode.net'): 
             self.server = user
@@ -591,36 +619,13 @@ class Client(object):
             if self.conn:
                 try:
                     reply = self.server_reply[cmd]
-                    reply(back)
+                    reply(msg)
                 except KeyError:
                     pass 
             if cmd == '366':
                 self.conn = True
         if cmd == 'PRIVMSG' and user not in self.blocked and not self.paused:
-            if back[0] == self.nick and channel != self.nick:
-                self.prefix_response(user, 'directed')
-            elif channel == self.nick:
-                self.prefix_response(user, 'private')
-                back.insert(0, user + ': ')
-            else:
-                self.prefix_response(user, 'response')
-            for i in back:
-                if 'http://' in i:
-                    self.chat_log.tag_config(i, underline=1)
-                    self.chat_log.tag_bind(i, "<Enter>", 
-                                           lambda e: self.chat_log.config(cursor="hand2"))
-                    self.chat_log.tag_bind(i, "<Leave>", 
-                                           lambda e: self.chat_log.config(cursor=""))
-                    self.chat_log.tag_bind(i, "<Button-1>", 
-                                           lambda e: self.open_link(e))
-                    self.chat_log.insert(END, i, i)
-                    self.chat_log.insert(END, ' ')
-                else:
-                    self.chat_log.insert(END, i + ' ')
-            self.chat_log.insert(END, '\n')
-            self.chat_log.see(END)
-            if self.logging:
-                self.log_file.write(' '.join(i for i in back).strip(':') + '\n') 
+            self.chat_msg(channel, user, msg)
         if cmd == 'JOIN':
             if user == self.nick:
                 self.channel = channel
