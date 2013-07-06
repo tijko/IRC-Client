@@ -6,6 +6,7 @@ import time
 import os
 import select
 import Queue
+import subprocess
 from Tkinter import *
 from chk_wiki import Wiki
 from responses import Response
@@ -485,6 +486,9 @@ class Client(object):
         self.client.sendall(userdata) 
         self.client.sendall('JOIN #%s\r\n' % self.channel.strip('#')) 
 
+    def open_link(self, tk_event, link):
+        subprocess.Popen(["firefox", link])
+
     def prefix_response(self, prefix_name, peer_state=None):   
         prefix = prefix_name + ' ' * (16 - len(prefix_name)) + '| '
         pos = float(self.chat_log.index(END)) - 1
@@ -607,14 +611,20 @@ class Client(object):
                             msg = ' ' + ' '.join(v for v in back[pos+1:back.index(i)]) + ' '
                             self.chat_log.insert(END, msg)
                             pos = back.index(i)
-                            self.chat_log.tag_config("link", underline=1)
-                            self.chat_log.insert(END, i, "link")
+                            self.chat_log.tag_config(i, underline=1)
+                            self.chat_log.tag_bind(i, "<Enter>", lambda e: self.chat_log.config(cursor="hand2"))
+                            self.chat_log.tag_bind(i, "<Leave>", lambda e: self.chat_log.config(cursor=""))
+                            self.chat_log.tag_bind(i, "Button-1>", lambda e: self.open_link(e, i))
+                            self.chat_log.insert(END, i, i)
                         else:
                             pos = back.index(i)
                             msg = ' ' + ' '.join(v for v in back[:pos]) + ' '
                             self.chat_log.insert(END, msg)
-                            self.chat_log.tag_config("link", underline=1)
-                            self.chat_log.insert(END, i, "link")
+                            self.chat_log.tag_config(i, underline=1)
+                            self.chat_log.tag_bind(i, "<Enter>", lambda e: self.chat_log.config(cursor="hand2"))
+                            self.chat_log.tag_bind(i, "<Leave>", lambda e: self.chat_log.config(cursor=""))
+                            self.chat_log.tag_bind(i, "<Button-1>", lambda e: self.open_link(e, i))
+                            self.chat_log.insert(END, i, i)
                 self.chat_log.insert(END, ' ' + ' '.join(v for v in back[pos+1:]) + '\n')
                 self.chat_log.see(END)
             else:
