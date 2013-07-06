@@ -15,8 +15,6 @@ from responses import Response
 class Client(object):
     
     def __init__(self, **kwargs):
-        self.root = Tk()
-        self.root.geometry("+400+165")
         self.user = kwargs['user']
         self.port = kwargs['port']
         self.password = kwargs['password']
@@ -26,11 +24,11 @@ class Client(object):
         self.create_window
         self.connect_to_host
         self.conn = False                                 
-        self.paused = False
-        self.verbose = True
-        self.blocked = list() 
+        self.paused = False 
         self.logging = False
         self.search = False
+        self.verbose = True
+        self.blocked = list()
         self.rspd = Response(self.chat_log, self.nick, self.prefix_response) 
         self.server_reply = {'311':self.rspd.whois_user_repl,  
                              '319':self.rspd.whois_chan_repl, 
@@ -451,6 +449,8 @@ class Client(object):
 
     @property
     def create_window(self):
+        self.root = Tk()
+        self.root.geometry("+400+165")
         self.scrollbar = Scrollbar(self.root)
         self.scrollbar.pack(side=RIGHT, fill=Y)
         self.chat_log = Text(self.root, width=100, height=30, 
