@@ -551,7 +551,7 @@ class Client(object):
         self.chat_log.insert(END, '\n')
         self.chat_log.see(END)
         if self.logging:
-            self.log_file.write(' '.join(i for i in msg).strip(':') + '\n') 		
+            self.log_file.write(' '.join(i for i in msg) + '\n') 		
 
     def input_handle(self, event):
         msg = self.entry.get()
