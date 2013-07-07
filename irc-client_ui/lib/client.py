@@ -29,7 +29,8 @@ class Client(object):
         self.search = False
         self.verbose = True
         self.blocked = list()
-        self.rspd = Response(self.chat_log, self.nick, self.prefix_response) 
+        self.rspd = Response(self.chat_log, self.nick, 
+                                  self.prefix_response) 
         self.server_reply = {'311':self.rspd.whois_user_repl,  
                              '319':self.rspd.whois_chan_repl, 
                              '353':self.rspd.names_repl,      
@@ -535,7 +536,7 @@ class Client(object):
         else:
             self.prefix_response(user, 'response')
         for i in msg:
-            if 'http://' in i:
+            if 'http' in i:
                 self.chat_log.tag_config(i, underline=1)
                 self.chat_log.tag_bind(i, "<Enter>", 
                                        lambda e: self.chat_log.config(cursor="hand2"))
