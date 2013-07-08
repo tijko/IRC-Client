@@ -10,6 +10,7 @@ class Response(object):
         self.screen = screen
         self.nick = nick
         self.prefix_line = prefix
+        self.chan = None
         self.chan_names = list()
         self.server_cmds = list()
 
@@ -35,10 +36,14 @@ class Response(object):
 
     def end_names_repl(self, server_end):
         self.prefix_line("Server")
-        self.screen.insert(END, "Total Users in %s: %d\n" % 
-                           (self.chan, len(self.chan_names)))
-        self.screen.insert(END, "%s\n" % str(self.chan_names))
-        self.screen.see(END)
+        if not self.chan:
+            self.screen.insert(END, "Channel does not exist\n")
+            self.screen.see(END)
+        else:
+            self.screen.insert(END, "Total Users in %s: %d\n" % 
+                               (self.chan, len(self.chan_names)))
+            self.screen.insert(END, "%s\n" % str(self.chan_names))
+            self.screen.see(END)
         self.chan_names = list()
         
     def info_repl(self, server_data):
