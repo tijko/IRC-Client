@@ -457,7 +457,7 @@ class Client(object):
         self.chat_log = Text(self.root, width=100, height=30, 
                              bg="black", fg="green2",
                              wrap=WORD, yscrollcommand=self.scrollbar.set)
-        self.chat_log.pack()
+        self.chat_log.pack(expand=1, fill="both")
         self.scrollbar.config(command=self.chat_log.yview)
         self.scrn_loop = self.chat_log.after(100, self.msg_buffer_chk)
         self.entry = Entry(self.root, bg="black", fg="green2", 
