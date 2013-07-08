@@ -456,17 +456,16 @@ class Client(object):
     @property
     def create_window(self):
         self.root = Tk()
-        self.root.geometry("+400+165")
+        self.root.geometry("700x450+400+165")
         self.scrollbar = Scrollbar(self.root)
         self.scrollbar.pack(side=RIGHT, fill=Y)
-        self.chat_log = Text(self.root, width=100, height=30, 
-                             bg="black", fg="green2",
+        self.chat_log = Text(self.root, bg="black", fg="green2",      
                              wrap=WORD, yscrollcommand=self.scrollbar.set)
         self.chat_log.pack(expand=1, fill="both")
         self.scrollbar.config(command=self.chat_log.yview)
         self.scrn_loop = self.chat_log.after(100, self.msg_buffer_chk)
-        self.entry = Entry(self.root, bg="black", fg="green2", 
-                                      insertbackground="green2")
+        self.entry = Entry(self.chat_log, bg="black", fg="green2", 
+                                  bd=3, insertbackground="green2")
         self.entry.bind('<Return>', self.input_handle)
         self.entry.pack(side=BOTTOM, fill=X)
         self.chat_log.insert(END, 'ATTEMPTING TO CONNECT TO %s #%s\n' % 
