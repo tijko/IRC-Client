@@ -191,9 +191,14 @@ class Client(object):
             self.chat_log.insert(END, self._part.__doc__ + '\n')
             self.chat_log.see(END)
             return
-        self.channel = None
-        chan_part = 'PART %s\r\n' % chan
-        self.client.sendall(chan_part)
+        if chan == self.channel:
+            self.channel = None
+            chan_part = 'PART %s\r\n' % chan
+            self.client.sendall(chan_part)
+        else:
+            self.prefix_response("Server")
+            self.chat_log.insert(END, "You not currently in %s\n" % chan)
+            self.chat_log.see(END)
 
     def _noise(self, flags=None):
         '''
