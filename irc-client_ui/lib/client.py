@@ -456,8 +456,9 @@ class Client(object):
     @property
     def create_window(self):
         self.root = Tk()
+        self.root.geometry("700x450+400+165")
         self.scrollbar = Scrollbar(self.root)
-        self.scrollbar.grid(column=1, sticky=E+S+N)
+        self.scrollbar.grid(column=1, rowspan=2, sticky=E+S+N)
         self.chat_log = Text(self.root, bg="black", fg="green2",      
                              wrap=WORD, yscrollcommand=self.scrollbar.set)
         self.chat_log.grid(row=0, column=0, sticky=N+S+E+W)
@@ -471,6 +472,7 @@ class Client(object):
         self.root.grid_columnconfigure(0, weight=1)
         self.chat_log.insert(END, 'ATTEMPTING TO CONNECT TO %s #%s\n' % 
                                               (self.host, self.channel))
+        self.entry.focus_set()
         self.chat_log.see(END)
 
     @property        
@@ -554,7 +556,8 @@ class Client(object):
             else:
                 self.chat_log.insert(END, i + ' ')
         self.chat_log.insert(END, '\n')
-        self.chat_log.see(END)
+        if self.scrollbar.get()[1] == 1.0:
+            self.chat_log.see(END)
         if self.logging:
             self.log_file.write(' '.join(i for i in msg) + '\n') 		
 
@@ -573,7 +576,8 @@ class Client(object):
                 else:
                     self.prefix_response("Server") 
                     self.chat_log.insert(END, 'Unknown Command! Type /HELP for list of commands\n')
-                    self.chat_log.see(END)
+                    if self.scrollbar.get()[1] == 1.0:
+                        self.chat_log.see(END)
             else:
                 new_msg = 'privmsg %s :'  % self.channel + msg + '\r\n'
                 self.client.sendall(new_msg)
@@ -601,7 +605,8 @@ class Client(object):
                         self.client.sendall('PONG ' + self.recv_msg[1] + '\r\n')
                         self.prefix_response("Server")
                         self.chat_log.insert(END, "Channel Ping@ ==> %s\n" % time.ctime())
-                        self.chat_log.see(END)
+                        if self.scrollbar.get()[1] == 1.0:
+                            self.chat_log.see(END)
                     else: 
                         if len(self.recv_msg) >= 3:
                             self.msg_handle()       
@@ -644,10 +649,12 @@ class Client(object):
                 self.prefix_response(user, 'enter')
                 new_msg = "entered --> %s\n" % channel
                 self.chat_log.insert(END, new_msg)
-                self.chat_log.see(END)
+                if self.scrollbar.get()[1] == 1.0:
+                    self.chat_log.see(END)
         if cmd == 'QUIT':
             if user != self.nick and self.verbose:
                 self.prefix_response(user, 'leave')
                 new_msg = "left --> %s\n" % self.channel 
                 self.chat_log.insert(END, new_msg)
-                self.chat_log.see(END)
+                if self.scrollbar.get()[1] == 1.0:
+                    self.chat_log.see(END)
