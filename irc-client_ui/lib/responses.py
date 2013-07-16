@@ -2,7 +2,7 @@
 #-*- coding: utf-8 -*-
 
 from Tkinter import *
-
+import os
 
 class Response(object):
 
@@ -11,6 +11,7 @@ class Response(object):
         self.nick = nick
         self.prefix_line = prefix
         self.chan = None
+        self.log_links = False
         self.chan_names = list()
         self.server_cmds = list()
 
@@ -129,3 +130,13 @@ class Response(object):
         except IndexError:
             pass
         self.screen.see(END)
+        if self.log_links:
+            with open(os.getcwd() + '/.link.txt', 'w') as f:
+                f.write(('=' * 25) + '\n')
+                f.write('--' + topic.split(' :')[0] + '--\n')
+                try:
+                    f.write(topic.split(' :')[0] + '\n')
+                except IndexError:
+                    pass
+                f.write('\n')
+
