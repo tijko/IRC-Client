@@ -354,16 +354,17 @@ class Client(object):
         self.chat_log.insert(END, "You are currently known as => %s\n" % self.nick)
         self.chat_log.see(END)
 
-    def _list(self, chan=None):
+    def _list(self, log=None):
         '''
-           Usage: /LIST (optional <channel>) --> Will show all the channels available and their topic.
+           Usage: /LIST (optional <log>) --> Will show all the channels available and their topic.
         '''
-        if not chan:
+        if not log:
             lst_msg = "LIST\r\n"
             self.client.sendall(lst_msg)
-        else:
-            lst_msg = "LIST #%s\r\n" % chan
+        elif log == 'l':
+            lst_msg = "LIST\r\n"
             self.client.sendall(lst_msg)
+            self.rspd.log_links = True
 
     def _help(self, cmd=None):
         '''
