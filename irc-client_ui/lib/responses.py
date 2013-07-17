@@ -131,7 +131,7 @@ class Response(object):
             pass
         self.screen.see(END)
         if self.log_links:
-            with open(os.getcwd() + '/.link.txt', 'w') as f:
+            with open(os.getcwd() + '/.link.txt', 'a') as f:
                 f.write(('=' * 25) + '\n')
                 f.write('--' + topic.split(' :')[0] + '--\n')
                 try:
