@@ -452,7 +452,16 @@ class Client(object):
         if toggle == 'off':
             if self.logging:
                 self.log_file.close()
-            self.logging = False 
+            self.logging = False
+
+    def channel_msg(self, msg):
+        chan_msg = 'privmsg %s :'  % self.channel + msg + '\r\n'
+        self.client.sendall(chan_msg)
+        self.prefix_response(self.nick)
+        self.chat_log.insert(END, msg + '\n')
+        self.chat_log.see(END)
+        if self.logging:
+            self.log_file.write(msg + '\n')
 
     @property
     def create_window(self):
@@ -487,6 +496,15 @@ class Client(object):
             self.prefix_response("Server")
             self.chat_log.insert(END, 'Connection Failed! --> check host & port\n')
             return
+            
+    @property            
+    def connection_drop(self):
+        self.prefix_response("Server")
+        self.chat_log.insert(END, "Connection Dropped!\n")
+        self.chat_log.see(END)
+        self.client.close()
+        self.conn = False
+        self.connect_to_host
 
     @property                    
     def server_login(self):
@@ -580,13 +598,7 @@ class Client(object):
                     if self.scrollbar.get()[1] == 1.0:
                         self.chat_log.see(END)
             else:
-                new_msg = 'privmsg %s :'  % self.channel + msg + '\r\n'
-                self.client.sendall(new_msg)
-                self.prefix_response(self.nick)
-                self.chat_log.insert(END, msg + '\n')
-                self.chat_log.see(END)
-                if self.logging:
-                    self.log_file.write(msg + '\n')
+                self.channel_msg(msg)
 
     def msg_buffer_chk(self):        
         self.data = None
@@ -612,12 +624,7 @@ class Client(object):
                         if len(self.recv_msg) >= 3:
                             self.msg_handle()       
             else:
-                self.prefix_response("Server")
-                self.chat_log.insert(END, "Connection Dropped!\n")
-                self.chat_log.see(END)
-                self.client.close()
-                self.conn = False
-                self.connect_to_host
+                self.connection_drop()
         self.root.update_idletasks()
         self.scrn_loop = self.chat_log.after(100, self.msg_buffer_chk)
     
