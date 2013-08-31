@@ -18,3 +18,9 @@ entering `/help` will show all other available commands:
 You can also use `/help <command>` for any valid command, if you want to see how to use it or
 what the command does.
 
+#### note:
+
+This client does use two libraries that are not included in python's standard lib.
+They are `BeautifulSoup` and `Requests`, so those will need to be pip-installed, 
+downloaded from their site, or installed using whichever package manager your system
+uses.
