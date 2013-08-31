@@ -6,6 +6,9 @@ using Tkinter but, has some text highlighting applied for different messages.
 
 IRC-Client only allows chatting on one channel at a time, so no other channel-tabs right now.
 
+There is hyperlink recognition, they're underlined. If you left click on any 
+links that are automatically __underlined__ and you have firefox browser
+installed they will open in a new __firefox__ window.
 #### usage:
 
 When inputting any command use a backslash then the command you wish to call,
