@@ -65,8 +65,6 @@ class Login(object):
             login_data = {i:v for i,v in credentials}
             for cred in login_data:
                 getattr(self, cred).insert(0, login_data[cred])
-                #field = 'self.%s.insert(0, %s)' % (cred, repr(login_data[cred]))
-                #exec(field)
             self.chkbx.select()
         return
 
