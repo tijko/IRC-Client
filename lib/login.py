@@ -3,7 +3,9 @@
 
 from Tkinter import *
 from client import Client
+import ConfigParser
 import os
+
 
 class Login(object):
 
@@ -11,9 +13,6 @@ class Login(object):
         self.root = Tk()
         self.root.geometry("300x275+400+100")
         self.chk = IntVar()
-        self.PATH = os.path.join(os.environ['HOME'], '.irc-client/')
-        if not os.path.isdir(self.PATH):
-            os.mkdir(self.PATH)
         self.create_window()
             
     def create_window(self):
@@ -59,19 +58,27 @@ class Login(object):
         self.root.mainloop()
 
     def load_saved(self):
-        if os.path.isfile(self.PATH + 'login_data'):
-            with open(self.PATH + 'login_data') as f:
-                login_data = f.read().split()
-            try:
-                self.host.insert(0, login_data[0]) 
-                self.port.insert(0, int(login_data[1]))
-                self.channel.insert(0, login_data[2])
-                self.user.insert(0, login_data[3])
-                self.nick.insert(0, login_data[4])
-                self.password.insert(0, login_data[5])
-                self.chkbx.select()
-            except IndexError:
-                pass
+        if os.path.isfile(os.environ['HOME'] + '/.pychat'):
+            login_settings = ConfigParser.ConfigParser()
+            login_settings.read(os.environ['HOME'] + '/.pychat')
+            credentials = login_settings.items('PyChat_Login')
+            login_data = {i:v for i,v in credentials}
+            for cred in login_data:
+                getattr(self, cred).insert(0, login_data[cred])
+                #field = 'self.%s.insert(0, %s)' % (cred, repr(login_data[cred]))
+                #exec(field)
+            self.chkbx.select()
+        return
+
+    def save_login(self, creds):
+        sec = 'PyChat_Login'
+        home_dir = os.environ['HOME']
+        login_file = ConfigParser.RawConfigParser()
+        login_file.add_section(sec)
+        for cred in creds:
+            login_file.set(sec, cred, creds[cred])
+        with open(home_dir + '/.pychat', 'wb') as f:
+            login_file.write(f)        
 
     def login_credentials(self):
         try:
@@ -95,14 +102,10 @@ class Login(object):
 
             self.root.destroy()
             if self.chk.get():
-                with open(self.PATH + 'login_data', 'w') as f:
-                    for i in [host, str(port), channel, user, nick, password]:
-                        f.write(i + '\n')
-            else:
-                try:
-                    os.remove(self.PATH + 'login_data')
-                except OSError:
-                    pass
+                login_credentials = {'port':port, 'host':host, 
+                                     'channel':channel, 'user':user,
+                                     'nick':nick, 'password':password}
+                self.save_login(login_credentials)
             client = Client(host=host, 
                             port=port, 
                             channel=channel, 
