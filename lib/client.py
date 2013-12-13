@@ -624,7 +624,7 @@ class Client(object):
                         if len(self.recv_msg) >= 3:
                             self.msg_handle()       
             else:
-                self.connection_drop()
+                self.connection_drop
         self.root.update_idletasks()
         self.scrn_loop = self.chat_log.after(100, self.msg_buffer_chk)
     
