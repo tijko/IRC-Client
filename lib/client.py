@@ -591,7 +591,7 @@ class Client(object):
                 if command and msg_cmd != "msg":
                     command(msg[1])
                 elif command and msg_cmd == "msg":
-                    command(' '.join(i for i in msg[2:-1]), msg[1])
+                    command(' '.join(msg[2:-1]), msg[1])
                 else:
                     self.prefix_response("Server") 
                     self.chat_log.insert(END, 'Unknown Command! Type /HELP for list of commands\n')
