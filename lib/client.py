@@ -514,6 +514,15 @@ class Client(object):
         userdata = 'USER %s %s servername :%s\r\n' % (self.nick, self.host, self.user) 
         self.client.sendall(userdata) 
         self.client.sendall('JOIN #%s\r\n' % self.channel.strip('#')) 
+
+    @property
+    def server_pong(self):
+        self.client.sendall('PONG ' + self.recv_msg[1] + '\r\n')
+        self.prefix_response("Server")
+        self.chat_log.insert(END, "Channel Ping@ ==> %s\n" % time.ctime())
+        if self.scrollbar.get()[1] == 1.0:
+            self.chat_log.see(END)
+
         
     def prefix_response(self, prefix_name, peer_state=None):   
         prefix = prefix_name + ' ' * (16 - len(prefix_name)) + '| '
@@ -615,11 +624,7 @@ class Client(object):
                 for i in [j.split() for j in self.data.split('\r\n') if j]:
                     self.recv_msg = i
                     if self.recv_msg[0] == 'PING':
-                        self.client.sendall('PONG ' + self.recv_msg[1] + '\r\n')
-                        self.prefix_response("Server")
-                        self.chat_log.insert(END, "Channel Ping@ ==> %s\n" % time.ctime())
-                        if self.scrollbar.get()[1] == 1.0:
-                            self.chat_log.see(END)
+                        self.server_pong
                     else: 
                         if len(self.recv_msg) >= 3:
                             self.msg_handle()       
