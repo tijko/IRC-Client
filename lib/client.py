@@ -557,7 +557,19 @@ class Client(object):
                 self.chat_log.tag_add("peer_leave", str(pos), str(pos + 0.16))
                 self.chat_log.tag_config("peer_leave", background="royal blue",
                                                         foreground="black")
-                                                                               
+
+    def buffer_data_handle(self, buffer_data):
+        if buffer_data:
+            for i in [j.split() for j in buffer_data.split('\r\n') if j]:
+                self.recv_msg = i
+                if self.recv_msg[0] == 'PING':
+                    self.server_pong
+                else: 
+                    if len(self.recv_msg) >= 3:
+                        self.msg_handle()       
+        else:
+            self.connection_drop
+
     def open_link(self, tk_event):
         link = self.chat_log.tag_names(CURRENT)[0]
         subprocess.Popen(["firefox", link])
@@ -587,7 +599,7 @@ class Client(object):
         if self.scrollbar.get()[1] == 1.0:
             self.chat_log.see(END)
         if self.logging:
-            self.log_file.write(' '.join(i for i in msg) + '\n') 		
+            self.log_file.write(' '.join(msg) + '\n') 		
 
     def input_handle(self, event):
         msg = self.entry.get()
@@ -610,26 +622,16 @@ class Client(object):
                 self.channel_msg(msg)
 
     def msg_buffer_chk(self):        
-        self.data = None
         socket_data = select.select([self.client], [], [], 0.01)
         if socket_data[0]:
             try:
-                self.data = self.client.recvfrom(4096)[0]
+                buffer_data = self.client.recvfrom(4096)[0]
+                self.buffer_data_handle(buffer_data)
             except socket.error:
                 self.prefix_response("Server")
                 self.chat_log.insert(END, "Bad Connection!\n")
                 self.chat_log.see(END)
                 return
-            if self.data:
-                for i in [j.split() for j in self.data.split('\r\n') if j]:
-                    self.recv_msg = i
-                    if self.recv_msg[0] == 'PING':
-                        self.server_pong
-                    else: 
-                        if len(self.recv_msg) >= 3:
-                            self.msg_handle()       
-            else:
-                self.connection_drop
         self.root.update_idletasks()
         self.scrn_loop = self.chat_log.after(100, self.msg_buffer_chk)
     
