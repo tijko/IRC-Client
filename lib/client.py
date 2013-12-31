@@ -561,12 +561,11 @@ class Client(object):
     def buffer_data_handle(self, buffer_data):
         if buffer_data:
             for i in [j.split() for j in buffer_data.split('\r\n') if j]:
-                self.recv_msg = i
+                self.recv_msg = [l.strip(':') for l in i]
                 if self.recv_msg[0] == 'PING':
                     self.server_pong
-                else: 
-                    if len(self.recv_msg) >= 3:
-                        self.msg_handle()       
+                elif len(self.recv_msg) >= 3: 
+                    self.msg_handle()       
         else:
             self.connection_drop
 
@@ -600,6 +599,18 @@ class Client(object):
             self.chat_log.see(END)
         if self.logging:
             self.log_file.write(' '.join(msg) + '\n') 		
+
+    def server_reply_msg(self, user, cmd):
+        self.server = user
+        self.rspd.server = user
+        if self.conn:
+            try:
+                reply = self.server_reply[cmd]
+                reply(self.recv_msg[3:])
+            except KeyError:
+                pass 
+        if cmd == '366':
+            self.conn = True
 
     def input_handle(self, event):
         msg = self.entry.get()
@@ -637,21 +648,11 @@ class Client(object):
     
     def msg_handle(self):
         user, cmd, channel = self.recv_msg[:3]  
-        msg = [i.strip(':') for i in self.recv_msg[3:]]
         user = user.split('!')[0].strip(':')
         if user.endswith('.freenode.net'): 
-            self.server = user
-            self.rspd.server = user
-            if self.conn:
-                try:
-                    reply = self.server_reply[cmd]
-                    reply(msg)
-                except KeyError:
-                    pass 
-            if cmd == '366':
-                self.conn = True
+            self.server_reply_msg(user, cmd)
         if cmd == 'PRIVMSG' and user not in self.blocked and not self.paused:
-            self.chat_msg(channel, user, msg)
+            self.chat_msg(channel, user, self.recv_msg[3:])
         if cmd == 'JOIN':
             if user == self.nick:
                 self.channel = channel
