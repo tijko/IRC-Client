@@ -569,6 +569,20 @@ class Client(object):
         else:
             self.connection_drop
 
+    def parse_msg(self, token):
+        if 'http' in token:
+            self.chat_log.tag_config(token, underline=1)
+            self.chat_log.tag_bind(token, "<Enter>", 
+                                   lambda e: self.chat_log.config(cursor="hand2"))
+            self.chat_log.tag_bind(token, "<Leave>", 
+                                   lambda e: self.chat_log.config(cursor=""))
+            self.chat_log.tag_bind(token, "<Button-1>", 
+                                   lambda e: self.open_link(e))
+            self.chat_log.insert(END, token, token)
+            self.chat_log.insert(END, ' ')
+        else:
+            self.chat_log.insert(END, token + ' ')
+
     def open_link(self, tk_event):
         link = self.chat_log.tag_names(CURRENT)[0]
         subprocess.Popen(["firefox", link])
@@ -581,19 +595,8 @@ class Client(object):
             msg.insert(0, user + ': ')
         else:
             self.prefix_response(user, 'response')
-        for i in msg:
-            if 'http' in i:
-                self.chat_log.tag_config(i, underline=1)
-                self.chat_log.tag_bind(i, "<Enter>", 
-                                       lambda e: self.chat_log.config(cursor="hand2"))
-                self.chat_log.tag_bind(i, "<Leave>", 
-                                       lambda e: self.chat_log.config(cursor=""))
-                self.chat_log.tag_bind(i, "<Button-1>", 
-                                       lambda e: self.open_link(e))
-                self.chat_log.insert(END, i, i)
-                self.chat_log.insert(END, ' ')
-            else:
-                self.chat_log.insert(END, i + ' ')
+        for token in msg:
+            self.parse_msg(token)
         self.chat_log.insert(END, '\n')
         if self.scrollbar.get()[1] == 1.0:
             self.chat_log.see(END)
