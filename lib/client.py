@@ -584,6 +584,14 @@ class Client(object):
             if self.scrollbar.get()[1] == 1.0:
                 self.chat_log.see(END)
 
+    def channel_quit(self, user):
+        if user != self.nick and self.verbose:
+            self.prefix_response(user, 'leave')
+            new_msg = "left --> %s\n" % self.channel 
+            self.chat_log.insert(END, new_msg)
+            if self.scrollbar.get()[1] == 1.0:
+                self.chat_log.see(END)
+
     def parse_msg(self, token):
         if 'http' in token:
             self.chat_log.tag_config(token, underline=1)
@@ -674,9 +682,4 @@ class Client(object):
         if cmd == 'JOIN':
             self.channel_join(user, channel)
         if cmd == 'QUIT':
-            if user != self.nick and self.verbose:
-                self.prefix_response(user, 'leave')
-                new_msg = "left --> %s\n" % self.channel 
-                self.chat_log.insert(END, new_msg)
-                if self.scrollbar.get()[1] == 1.0:
-                    self.chat_log.see(END)
+            self.channel_quit(user)
