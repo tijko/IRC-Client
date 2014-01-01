@@ -569,6 +569,21 @@ class Client(object):
         else:
             self.connection_drop
 
+    def channel_join(self, user, channel):
+        if user == self.nick:
+            self.channel = channel
+            if not self.conn:
+                self.chat_log.insert(END, 'SUCCESSFULLY CONNECTED TO %s\n' % self.host)
+            self.chat_log.insert(END, "SUCCESSFULLY JOINED %s\n" % channel)
+            self.chat_log.see(END)
+        elif user != self.nick and self.verbose:
+            self.channel = channel
+            self.prefix_response(user, 'enter')
+            new_msg = "entered --> %s\n" % channel
+            self.chat_log.insert(END, new_msg)
+            if self.scrollbar.get()[1] == 1.0:
+                self.chat_log.see(END)
+
     def parse_msg(self, token):
         if 'http' in token:
             self.chat_log.tag_config(token, underline=1)
@@ -657,19 +672,7 @@ class Client(object):
         if cmd == 'PRIVMSG' and user not in self.blocked and not self.paused:
             self.chat_msg(channel, user, self.recv_msg[3:])
         if cmd == 'JOIN':
-            if user == self.nick:
-                self.channel = channel
-                if not self.conn:
-                    self.chat_log.insert(END, 'SUCCESSFULLY CONNECTED TO %s\n' % self.host)
-                self.chat_log.insert(END, "SUCCESSFULLY JOINED %s\n" % channel)
-                self.chat_log.see(END)
-            elif user != self.nick and self.verbose:
-                self.channel = channel
-                self.prefix_response(user, 'enter')
-                new_msg = "entered --> %s\n" % channel
-                self.chat_log.insert(END, new_msg)
-                if self.scrollbar.get()[1] == 1.0:
-                    self.chat_log.see(END)
+            self.channel_join(user, channel)
         if cmd == 'QUIT':
             if user != self.nick and self.verbose:
                 self.prefix_response(user, 'leave')
