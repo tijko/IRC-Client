@@ -87,10 +87,7 @@ class Client(object):
            Usage: /NAMES <channel> --> List all nicks visible on channel.
         ''' 
         if not chan:
-            self.prefix_response("Server")
-            self.chat_log.insert(END, self._names.__doc__ + '\n')
-            self.chat_log.see(END)
-            return
+            return self.command_error(self._names.__doc__)
         query = 'NAMES %s\r\n' % chan
         self.cmd_names = True
         self.client.sendall(query)
@@ -100,10 +97,7 @@ class Client(object):
            Usage: /WHOIS <nick> --> Query information about a user.
         '''
         if not query:
-            self.prefix_response("Server")
-            self.chat_log.insert(END, self._whois.__doc__ + '\n')
-            self.chat_log.see(END)
-            return
+            return self.command_error(self._whois.__doc__)
         query = 'WHOIS %s\r\n' % query
         self.client.sendall(query)
 
@@ -146,10 +140,7 @@ class Client(object):
                L = Information about current server connections
         '''
         if not flags:
-            self.prefix_response("Server")
-            self.chat_log.insert(END, self._stats.__doc__ + '\n')
-            self.chat_log.see(END)
-            return
+            return self.command_error(self._stats.__doc__)
         query = 'STATS %s %s\r\n' % (flags, self.server)
         self.client.sendall(query)
 
@@ -172,10 +163,7 @@ class Client(object):
            Usage: /JOIN <channel> --> Allows a client to start communicating on the specified channel
         '''
         if not chan:
-            self.prefix_response("Server")
-            self.chat_log.insert(END, self._join.__doc__ + '\n')
-            self.chat_log.see(END)
-            return
+            return self.command_error(self._join.__doc__)
         if isinstance(self.channel, list):
             for channel in self.channel:
                 self._part(channel)
@@ -191,10 +179,7 @@ class Client(object):
             Usage: /WJOIN <channel> --> Allows a client to start communicating simultaneously on the specified channel and the current channel/s
         '''
         if not chan or not self.channel:
-            self.prefix_response("Server")
-            self.chat_log.insert(END, self._wjoin.__doc__ + '\n')
-            self.chat_log.see(END)
-            return
+            return self.command_error(self._wjoin.__doc__)
         self.channel = [self.channel, chan]
         chan_join = 'JOIN %s\r\n' % chan
         self.client.sendall(chan_join)            
@@ -204,10 +189,7 @@ class Client(object):
            Usage: /PART <channel> --> Leave a channels active user's list.
         '''
         if not chan:
-            self.prefix_response("Server")
-            self.chat_log.insert(END, self._part.__doc__ + '\n')
-            self.chat_log.see(END)
-            return
+            return self.command_error(self._part.__doc__)
         if isinstance(self.channel, str) and chan == self.channel: 
             self.channel = None
             chan_part = 'PART %s\r\n' % chan
@@ -234,10 +216,7 @@ class Client(object):
                b = block all channel info
         '''                                              
         if not flags:
-            self.prefix_response("Server")
-            self.chat_log.insert(END, self._noise.__doc__ + '\n')
-            self.chat_log.see(END)
-            return
+            return self.command_error(self._noise.__doc__)
         elif flags == 's':
             self.verbose = True
         elif flags == 'b':
@@ -248,10 +227,7 @@ class Client(object):
            Usage: /BLOCK <nick> --> Blocks the chat from the nick supplied.
         '''
         if not nick:
-            self.prefix_response("Server")
-            self.chat_log.insert(END, self._block.__doc__ + '\n')
-            self.chat_log.see(END)
-            return
+            return self.command_error(self._block.__doc__)
         if nick not in self.blocked:
             self.blocked.append(nick)
 
@@ -260,10 +236,7 @@ class Client(object):
            Usage: /UNBLOCK <nick> --> Unblocks chat from a nick thats currently being blocked.
         '''
         if not nick:
-            self.prefix_response("Server")
-            self.chat_log.insert(END, self._unblock.__doc__ + '\n')
-            self.chat_log.see(END)
-            return
+            return self.command_error(self._unblock.__doc__)
         if nick in self.blocked:
             self.blocked.remove(nick)   
 
@@ -272,10 +245,7 @@ class Client(object):
            Usage: /TOPIC <channel> --> Prints out the topic for the supplied channel.
         '''
         if not chan:
-            self.prefix_response("Server")
-            self.chat_log.insert(END, self._topic.__doc__ + '\n')
-            self.chat_log.see(END)
-            return
+            return self.command_error(self._topic.__doc__)
         topic = 'TOPIC %s\r\n' % chan
         self.client.sendall(topic)
 
@@ -284,10 +254,7 @@ class Client(object):
            Usage: /VERSION <server> --> Returns the version of program that the server is using.
         '''
         if not server:
-            self.prefix_response("Server")
-            self.chat_log.insert(END, self._version.__doc__ + '\n')
-            self.chat_log.see(END)
-            return
+            return self.command_error(self._version.__doc__)
         ver_chk = 'VERSION %s\r\n' % server
         self.cmd_ver = True
         self.client.sendall(ver_chk)
@@ -318,10 +285,7 @@ class Client(object):
            Usage /NICK <nick> --> Registers the supplied nick with services.
         '''
         if not nick:
-            self.prefix_response("Server")
-            self.chat_log.insert(END, self._nick.__doc__ + '\n')
-            self.chat_log.see(END)
-            return
+            return self.command_error(self._nick.__doc__)
         self.nick = nick
         self.rspd.nick = nick
         ident = "NICK %s\r\n" % self.nick
@@ -334,10 +298,7 @@ class Client(object):
            Usage: /WHOWAS <nick> --> Returns information about a nick that doesn't exist anymore.
         '''
         if not nick:
-            self.prefix_response("Server")
-            self.chat_log.insert(END, self._whowas.__doc__ + '\n')
-            self.chat_log.see(END)
-            return
+            return self.command_error(self._whowas.__doc__)
         whowas_msg = "WHOWAS %s\r\n" % nick
         self.client.sendall(whowas_msg)
 
@@ -346,10 +307,7 @@ class Client(object):
            Usage: /WHATIS <item> --> Returns a query of wikipedia for the supplied item.
         '''
         if not lookup:
-            self.prefix_response("Server")
-            self.chat_log.insert(END, self._whatis.__doc__ + '\n')
-            self.chat_log.see(END)
-            return
+            return self.command_error(self._whatis.__doc__)
         if not self.search:        
             self.wiki_q = Queue.Queue()
             self.wiki = Wiki(self, self.chat_log, self.prefix_response, 
@@ -369,10 +327,7 @@ class Client(object):
            Usage: /WHOAMI --> Prints out your current nick.
         '''
         if nick:
-            self.prefix_response("Server")
-            self.chat_log.insert(END, self._whoami.__doc__ + '\n')
-            self.chat_log.see(END)
-            return
+            return self.command_error(self._whoami.__doc__)
         self.prefix_response("Server")
         self.chat_log.insert(END, "You are currently known as => %s\n" % self.nick)
         self.chat_log.see(END)
@@ -401,9 +356,7 @@ class Client(object):
             return
         try:
             func_info = cmd.lower() 
-            self.prefix_response("Server")
-            self.chat_log.insert(END, self.commands[func_info].__doc__ + '\n')
-            self.chat_log.see(END)
+            self.command_error(self.commands[func_info].__doc__)
         except KeyError:
             self.prefix_response("Server")
             new_msg = 'Unknown Command! Type /HELP for a list of commands\n'
@@ -419,9 +372,7 @@ class Client(object):
            use "/PAUSE off" to turn off pause "unpause".
         '''
         if not toggle or toggle not in ["on", "off"]:
-            self.prefix_response("Server")
-            self.chat_log.insert(END, self._pause.__doc__ + '\n')
-            self.chat_log.see(END)
+            return self.command_error(self._pause.__doc__)
         if toggle == 'on':
             self.paused = True
         if toggle == 'off':
@@ -445,9 +396,7 @@ class Client(object):
            Usage: /MSG <nick> <msg> --> Message a user off channel.
         '''
         if not nick:
-            self.prefix_response("Server")
-            self.chat_log.insert(END, self._usermsg.__doc__ + '\n')
-            self.chat_log.see(END)
+            return self.command_error(self._usermsg.__doc__)
         else:
             new_msg = "privmsg %s :" % nick + msg 
             self.client.sendall(new_msg + '\r\n')
@@ -465,9 +414,7 @@ class Client(object):
            use "/LOG off" to close the log. 
         '''
         if not toggle or toggle not in ["on", "off"]:
-            self.prefix_response("Server")
-            self.chat_log.insert(END, self._log.__doc__ + '\n')
-            self.chat_log.see(END)
+            return self.command_error(self._log.__doc__)
         if toggle == 'on':
             self.logging = True
             self.log_file = open(os.path.join(os.environ['HOME'], 'chat_log.txt'), 'a')
@@ -476,6 +423,11 @@ class Client(object):
             if self.logging:
                 self.log_file.close()
             self.logging = False
+
+    def command_error(self, cmd_doc):
+        self.prefix_response("Server")
+        self.chat_log.insert(END, cmd_doc + '\n')
+        self.chat_log.see(END)    
 
     def channel_msg(self, msg):
         channel = msg.split()[0]
