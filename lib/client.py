@@ -18,7 +18,7 @@ class Client(object):
         self.user = kwargs['user']
         self.port = kwargs['port']
         self.password = kwargs['password']
-        self.channel = kwargs['channel']
+        self.channel = kwargs['channel'] 
         self.nick = kwargs['nick']
         self.host = kwargs['host']
         self.create_window
@@ -63,6 +63,7 @@ class Client(object):
                          'quit':self._quit,
                          'part':self._part,
                          'join':self._join,
+                         'wjoin':self._wjoin,
                          'noise':self._noise,
                          'block':self._block,
                          'unblock':self._unblock,
@@ -175,12 +176,28 @@ class Client(object):
             self.chat_log.insert(END, self._join.__doc__ + '\n')
             self.chat_log.see(END)
             return
-        if self.channel:
+        if isinstance(self.channel, list):
+            for channel in self.channel:
+                self._part(channel)
+        else: 
             self._part(self.channel)
         self.conn = False
         chan_join = 'JOIN %s\r\n' % chan
         self.client.sendall(chan_join)
         self.channel = chan.strip('#')
+
+    def _wjoin(self, chan=None):
+        '''
+            Usage: /WJOIN <channel> --> Allows a client to start communicating simultaneously on the specified channel and the current channel/s
+        '''
+        if not chan or not self.channel:
+            self.prefix_response("Server")
+            self.chat_log.insert(END, self._wjoin.__doc__ + '\n')
+            self.chat_log.see(END)
+            return
+        self.channel = [self.channel, chan]
+        chan_join = 'JOIN %s\r\n' % chan
+        self.client.sendall(chan_join)            
 
     def _part(self, chan=None):
         '''
@@ -191,10 +208,16 @@ class Client(object):
             self.chat_log.insert(END, self._part.__doc__ + '\n')
             self.chat_log.see(END)
             return
-        if chan == self.channel:
+        if isinstance(self.channel, str) and chan == self.channel: 
             self.channel = None
             chan_part = 'PART %s\r\n' % chan
             self.client.sendall(chan_part)
+        elif isinstance(self.channel, list) and chan in self.channel:
+            self.channel.remove(chan)
+            chan_part = 'PART %s\r\n' % chan
+            self.client.sendall(chan_part)
+            if not self.channel:
+                self.channel = None
         else:
             self.prefix_response("Server")
             self.chat_log.insert(END, "You are not currently in %s\n" % chan)
@@ -278,7 +301,7 @@ class Client(object):
         if not query:
             self.prefix_response("Server")
             self.chat_log.insert(END, 'You are currently connected to server <%s> and in channel <%s>\n' 
-                                       % (self.server, self.channel))
+                                       % (self.server, str(self.channel))) 
             self.chat_log.see(END)
 
     def _blocklist(self, nick=None):
@@ -303,7 +326,7 @@ class Client(object):
         self.rspd.nick = nick
         ident = "NICK %s\r\n" % self.nick
         self.client.sendall(ident)
-        if self.channel:
+        if self.channel: 
             self._join(self.channel)
 
     def _whowas(self, nick=None):
@@ -455,11 +478,24 @@ class Client(object):
             self.logging = False
 
     def channel_msg(self, msg):
-        chan_msg = 'privmsg %s :'  % self.channel + msg + '\r\n'
-        self.client.sendall(chan_msg)
-        self.prefix_response(self.nick)
-        self.chat_log.insert(END, msg + '\n')
-        self.chat_log.see(END)
+        channel = msg.split()[0]
+        if isinstance(self.channel, list) and channel not in self.channel:
+            self.prefix_response("Server")
+            self.chat_log.insert(END, 'Multiple channels open, specify a channel\n')
+            self.chat_log.see(END)
+            return
+        elif isinstance(self.channel, list) and channel in self.channel:
+            chan_msg = 'privmsg %s :' % msg + '\r\n'
+            self.client.sendall(chan_msg)
+            self.prefix_response(self.nick)
+            self.chat_log.insert(END, msg + '\n')
+            self.chat_log.see(END)
+        else:
+            chan_msg = 'privmsg %s :'  % self.channel + msg + '\r\n'
+            self.client.sendall(chan_msg)
+            self.prefix_response(self.nick)
+            self.chat_log.insert(END, msg + '\n')
+            self.chat_log.see(END)
         if self.logging:
             self.log_file.write(msg + '\n')
 
@@ -570,24 +606,27 @@ class Client(object):
             self.connection_drop
 
     def channel_join(self, user, channel):
-        if user == self.nick:
-            self.channel = channel
+        if user == self.nick and not isinstance(self.channel, list):
+            self.channel = channel 
             if not self.conn:
                 self.chat_log.insert(END, 'SUCCESSFULLY CONNECTED TO %s\n' % self.host)
             self.chat_log.insert(END, "SUCCESSFULLY JOINED %s\n" % channel)
             self.chat_log.see(END)
         elif user != self.nick and self.verbose:
-            self.channel = channel
+            if isinstance(self.channel, list) and channel not in self.channel:
+                self.channel.append(channel)
+            else:
+                self.channel = channel
             self.prefix_response(user, 'enter')
             new_msg = "entered --> %s\n" % channel
             self.chat_log.insert(END, new_msg)
             if self.scrollbar.get()[1] == 1.0:
                 self.chat_log.see(END)
 
-    def channel_quit(self, user):
+    def channel_quit(self, user, chan): 
         if user != self.nick and self.verbose:
             self.prefix_response(user, 'leave')
-            new_msg = "left --> %s\n" % self.channel 
+            new_msg = "left --> %s\n" % chan 
             self.chat_log.insert(END, new_msg)
             if self.scrollbar.get()[1] == 1.0:
                 self.chat_log.see(END)
@@ -656,7 +695,7 @@ class Client(object):
                     if self.scrollbar.get()[1] == 1.0:
                         self.chat_log.see(END)
             else:
-                self.channel_msg(msg)
+                self.channel_msg(msg) 
 
     def msg_buffer_chk(self):        
         socket_data = select.select([self.client], [], [], 0.01)
@@ -682,4 +721,4 @@ class Client(object):
         if cmd == 'JOIN':
             self.channel_join(user, channel)
         if cmd == 'QUIT':
-            self.channel_quit(user)
+            self.channel_quit(user, channel)
