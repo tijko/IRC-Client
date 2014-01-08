@@ -10,6 +10,7 @@ class Response(object):
         self.screen = screen
         self.nick = nick
         self.prefix_line = prefix
+        self.ln_strip = lambda s: s.strip(':')
         self.chan = None
         self.like_channels = False
         self.channel1 = False
@@ -37,12 +38,12 @@ class Response(object):
     def names_repl(self, userlist):
         if not self.like_channels:
             self.chan = userlist[1]
-            self.chan_names += [i.strip(':') for i in userlist[2:]]
+            self.chan_names += map(ln_strip, userlist[2:])
         elif self.like_channels and not self.channel1:
             for name in userlist[2:]:
                 self.chancomp.add(name.strip(':'))
         else:
-            self.chan_names += [i.strip(':') for i in userlist[2:]]
+            self.chan_names += map(ln_strip, userlist[2:])
 
     def end_names_repl(self, server_end):
         if not self.like_channels:
