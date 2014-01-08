@@ -64,6 +64,7 @@ class Client(object):
                          'part':self._part,
                          'join':self._join,
                          'wjoin':self._wjoin,
+                         'suser':self._shared,
                          'noise':self._noise,
                          'block':self._block,
                          'unblock':self._unblock,
@@ -90,6 +91,18 @@ class Client(object):
             return self.command_error(self._names.__doc__)
         query = 'NAMES %s\r\n' % chan
         self.cmd_names = True
+        self.client.sendall(query)
+
+    def _shared(self, chan1=None, chan2=None):
+        '''
+            Usage: /SUSER <channel 1> <channel 2> --> List all nicks in both channels.
+        '''
+        if not chan1 or not chan2:
+            return self.command_error(self._shared.__doc__)
+        self.rspd.like_channels = True
+        query = 'NAMES %s\r\n' % chan1
+        self.client.sendall(query)
+        query = 'NAMES %s\r\n' % chan2
         self.client.sendall(query)
 
     def _whois(self, query=None):
@@ -626,19 +639,20 @@ class Client(object):
         msg = self.entry.get()
         self.entry.delete(0, 'end')
         if msg:
-            if msg[0] == '/':
+            if msg.startswith('/'):
                 msg = msg.split() + [None]
                 msg_cmd = msg[0][1:].lower()
                 command = self.commands.get(msg_cmd)
-                if command and msg_cmd != "msg":
+                if command and msg_cmd != "msg" and msg_cmd != "suser":
                     command(msg[1])
                 elif command and msg_cmd == "msg":
                     command(' '.join(msg[2:-1]), msg[1])
+                elif command and msg_cmd == "suser":
+                    command(msg[1], msg[2])
                 else:
-                    self.prefix_response("Server") 
-                    self.chat_log.insert(END, 'Unknown Command! Type /HELP for list of commands\n')
                     if self.scrollbar.get()[1] == 1.0:
                         self.chat_log.see(END)
+                    return self.command_error('Unknown Command! Type /HELP for list of commands\n')
             else:
                 self.channel_msg(msg) 
 
