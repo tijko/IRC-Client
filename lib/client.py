@@ -432,10 +432,7 @@ class Client(object):
     def channel_msg(self, msg):
         channel = msg.split()[0]
         if isinstance(self.channel, list) and channel not in self.channel:
-            self.prefix_response("Server")
-            self.chat_log.insert(END, 'Multiple channels open, specify a channel\n')
-            self.chat_log.see(END)
-            return
+            return self.command_error('Multiple channels open, specify a channel')
         elif isinstance(self.channel, list) and channel in self.channel:
             chan_msg = 'privmsg %s :' % msg + '\r\n'
             self.client.sendall(chan_msg)
@@ -481,9 +478,7 @@ class Client(object):
             self.client.setblocking(0)
             self.server_login
         except socket.error:
-            self.prefix_response("Server")
-            self.chat_log.insert(END, 'Connection Failed! --> check host & port\n')
-            return
+           return self.command_error('Connection Failed! --> check host & port')
             
     @property            
     def connection_drop(self):
@@ -656,10 +651,7 @@ class Client(object):
                 buffer_data = self.client.recvfrom(4096)[0]
                 self.buffer_data_handle(buffer_data)
             except socket.error:
-                self.prefix_response("Server")
-                self.chat_log.insert(END, "Bad Connection!\n")
-                self.chat_log.see(END)
-                return
+                return self.command_error('Bad Connection!')
         self.root.update_idletasks()
         self.scrn_loop = self.chat_log.after(100, self.msg_buffer_chk)
     
