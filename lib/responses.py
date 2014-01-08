@@ -11,6 +11,9 @@ class Response(object):
         self.nick = nick
         self.prefix_line = prefix
         self.chan = None
+        self.like_channels = False
+        self.channel1 = False
+        self.chancomp = set()
         self.log_links = False
         self.chan_names = list()
         self.server_cmds = list()
@@ -32,21 +35,39 @@ class Response(object):
             self.screen.see(END)
 
     def names_repl(self, userlist):
-        self.chan = userlist[1]
-        self.chan_names += [i.strip(':') for i in userlist[2:]]
+        if not self.like_channels:
+            self.chan = userlist[1]
+            self.chan_names += [i.strip(':') for i in userlist[2:]]
+        elif self.like_channels and not self.channel1:
+            for name in userlist[2:]:
+                self.chancomp.add(name.strip(':'))
+        else:
+            self.chan_names += [i.strip(':') for i in userlist[2:]]
 
     def end_names_repl(self, server_end):
-        self.prefix_line("Server")
-        if not self.chan:
-            self.screen.insert(END, "Channel does not exist\n")
-            self.screen.see(END)
+        if not self.like_channels:
+            self.prefix_line("Server")
+            if not self.chan:
+                self.screen.insert(END, "Channel does not exist\n")
+                self.screen.see(END)
+            else:
+                self.screen.insert(END, "Total Users in %s: %d\n" % 
+                                   (self.chan, len(self.chan_names)))
+                self.screen.insert(END, "%s\n" % str(self.chan_names))
+                self.screen.see(END)
+            self.chan_names = list()
+        elif self.like_channels and not self.channel1:
+            self.channel1 = True   
         else:
-            self.screen.insert(END, "Total Users in %s: %d\n" % 
-                               (self.chan, len(self.chan_names)))
-            self.screen.insert(END, "%s\n" % str(self.chan_names))
+            self.channel1 = False
+            self.like_channels = False
+            like_users = list(self.chancomp.intersection(self.chan_names))
+            self.prefix_line("Server")
+            self.screen.insert(END, 'Shared users %d\n' % len(like_users))
+            self.screen.insert(END, '%s\n' % str(like_users))
             self.screen.see(END)
-        self.chan_names = list()
-        
+            self.chan_names = list()
+    
     def info_repl(self, server_data):
         server_data = ' '.join(i.strip(':') for i in server_data)
         self.prefix_line("Server") 
