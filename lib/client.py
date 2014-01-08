@@ -482,12 +482,10 @@ class Client(object):
             
     @property            
     def connection_drop(self):
-        self.prefix_response("Server")
-        self.chat_log.insert(END, "Connection Dropped!\n")
-        self.chat_log.see(END)
         self.client.close()
         self.conn = False
         self.connect_to_host
+        return self.command_error('Connection Dropped!')
 
     @property                    
     def server_login(self):
