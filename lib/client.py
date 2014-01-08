@@ -29,6 +29,7 @@ class Client(object):
         self.search = False
         self.verbose = True
         self.blocked = list()
+        self.ln_strip = lambda s: s.strip(':')
         self.rspd = Response(self.chat_log, self.nick, 
                                   self.prefix_response) 
         self.server_reply = {'311':self.rspd.whois_user_repl,  
@@ -555,7 +556,7 @@ class Client(object):
     def buffer_data_handle(self, buffer_data):
         if buffer_data:
             for i in [j.split() for j in buffer_data.split('\r\n') if j]:
-                self.recv_msg = [l.strip(':') for l in i]
+                self.recv_msg = map(self.ln_strip, i)
                 if self.recv_msg[0] == 'PING':
                     self.server_pong
                 elif len(self.recv_msg) >= 3: 
