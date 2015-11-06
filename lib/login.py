@@ -48,6 +48,8 @@ class Login(object):
                                                                       sticky="W")
         self.password = Entry(self.root, show='*')
         self.password.grid(row=5, column=1, pady=5)
+        self.login_fields = [self.port, self.host, self.channel, 
+                             self.user, self.nick, self.password]
         self.ok = Button(self.root, text="ok", command=self.login_credentials)
         self.ok.grid(row=6, column=0, padx=10, pady=10)
         self.cancel = Button(self.root, text="cancel", command=self.cancel_session)
@@ -62,54 +64,28 @@ class Login(object):
             login_settings = ConfigParser.ConfigParser()
             login_settings.read(os.environ['HOME'] + '/.pychat')
             credentials = login_settings.items('PyChat_Login')
-            login_data = {i:v for i,v in credentials}
-            for cred in login_data:
-                getattr(self, cred).insert(0, login_data[cred])
+            for field, value in credentials:
+                getattr(self, field).insert(0, value)
             self.chkbx.select()
-        return
 
-    def save_login(self, creds):
-        sec = 'PyChat_Login'
+    def save_login(self, credentials):
         home_dir = os.environ['HOME']
         login_file = ConfigParser.RawConfigParser()
-        login_file.add_section(sec)
-        for cred in creds:
-            login_file.set(sec, cred, creds[cred])
+        login_file.add_section('PyChat_Login')
+        for credential in credentials:
+            login_file.set('PyChat_Login', credential, credentials[credential])
         with open(home_dir + '/.pychat', 'wb') as f:
             login_file.write(f)        
 
     def login_credentials(self):
         try:
-            port = int(self.port.get())
-            self.port.delete(0, END)
-
-            host = self.host.get()
-            self.host.delete(0, END)
-
-            channel = self.channel.get()
-            self.channel.delete(0, END)
-    
-            user = self.user.get()
-            self.user.delete(0, END)
-
-            nick = self.nick.get()
-            self.nick.delete(0, END)
-
-            password = self.password.get()
-            self.password.delete(0, END)
-
+            fields = ['port', 'host', 'channel', 'user', 'nick', 'password']
+            credentials = map(getattr(Entry, 'get'), self.login_fields)
+            user_login_credentials = dict(zip(fields, credentials))
             self.root.destroy()
             if self.chk.get():
-                login_credentials = {'port':port, 'host':host, 
-                                     'channel':channel, 'user':user,
-                                     'nick':nick, 'password':password}
-                self.save_login(login_credentials)
-            client = Client(host=host, 
-                            port=port, 
-                            channel=channel, 
-                            user=user, 
-                            nick=nick, 
-                            password=password)
+                self.save_login(user_login_credentials)
+            client = Client(**user_login_credentials)
             client.root.mainloop()
         except ValueError:
             self.port.delete(0, END)
