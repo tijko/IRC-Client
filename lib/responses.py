@@ -38,12 +38,12 @@ class Response(object):
     def names_repl(self, userlist):
         if not self.like_channels:
             self.chan = userlist[1]
-            self.chan_names += map(ln_strip, userlist[2:])
+            self.chan_names += map(self.ln_strip, userlist[2:])
         elif self.like_channels and not self.channel1:
             for name in userlist[2:]:
                 self.chancomp.add(name.strip(':'))
         else:
-            self.chan_names += map(ln_strip, userlist[2:])
+            self.chan_names += map(self.ln_strip, userlist[2:])
 
     def end_names_repl(self, server_end):
         if not self.like_channels:
@@ -70,9 +70,9 @@ class Response(object):
             self.chan_names = list()
     
     def info_repl(self, server_data):
-        server_data = ' '.join(i.strip(':') for i in server_data)
+        server_info_repl = ' '.join(map(self.ln_strip, server_data))
         self.prefix_line("Server") 
-        self.screen.insert(END, server_data + '\n')
+        self.screen.insert(END, server_info_repl + '\n')
         self.screen.see(END)
 
     def links_repl(self, server_data):
