@@ -78,18 +78,20 @@ class Login(object):
             login_file.write(f)        
 
     def login_credentials(self):
+        fields = ['port', 'host', 'channel', 'user', 'nick', 'password']
+        credentials = map(getattr(Entry, 'get'), self.login_fields)
+        user_login_credentials = dict(zip(fields, credentials))
         try:
-            fields = ['port', 'host', 'channel', 'user', 'nick', 'password']
-            credentials = map(getattr(Entry, 'get'), self.login_fields)
-            user_login_credentials = dict(zip(fields, credentials))
-            self.root.destroy()
-            if self.chk.get():
-                self.save_login(user_login_credentials)
-            client = Client(**user_login_credentials)
-            client.root.mainloop()
+            user_login_credentials['port'] = int(user_login_credentials['port'])
         except ValueError:
             self.port.delete(0, END)
-            self.port.insert(0, "Port must be an interger!")
+            self.port.insert(0, 'port must be an integer')
+            return
+        self.root.destroy()
+        if self.chk.get():
+            self.save_login(user_login_credentials)
+        client = Client(**user_login_credentials)
+        client.root.mainloop()
 
     def cancel_session(self):
         self.root.destroy()
