@@ -15,6 +15,7 @@ from responses import Response
 class Client(object):
     
     def __init__(self, **kwargs):
+        self.root = kwargs['root']
         self.user = kwargs['user']
         self.port = kwargs['port']
         self.password = kwargs['password']
@@ -463,7 +464,6 @@ class Client(object):
 
     @property
     def create_window(self):
-        self.root = Tk()
         self.root.geometry("700x450+400+165")
         self.scrollbar = Scrollbar(self.root)
         self.scrollbar.grid(column=1, rowspan=2, sticky=E+S+N)
