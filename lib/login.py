@@ -9,13 +9,10 @@ import os
 
 class Login(object):
 
-    def __init__(self):
-        self.root = Tk()
-        self.root.geometry("300x275+400+100")
+    def __init__(self, root, runclient_cb):
+        self.root = root
+        self.runclient_cb = runclient_cb
         self.chk = IntVar()
-        self.create_window()
-            
-    def create_window(self):
         self.host_label = Label(self.root, text="Host:").grid(row=0, 
                                                               column=0, 
                                                               padx=5, 
@@ -50,14 +47,13 @@ class Login(object):
         self.password.grid(row=5, column=1, pady=5)
         self.login_fields = [self.port, self.host, self.channel, 
                              self.user, self.nick, self.password]
-        self.ok = Button(self.root, text="ok", command=self.login_credentials)
+        self.ok = Button(self.root, text="ok", command=self.runclient_cb)
         self.ok.grid(row=6, column=0, padx=10, pady=10)
         self.cancel = Button(self.root, text="cancel", command=self.cancel_session)
         self.cancel.grid(row=6, column=1, padx=10, pady=10)
         self.chkbx = Checkbutton(self.root, text="remember me", variable=self.chk)
         self.chkbx.grid(row=7, column=0, padx=5, pady=5)
         self.load_saved()
-        self.root.mainloop()
 
     def load_saved(self):
         if os.path.isfile(os.environ['HOME'] + '/.pychat'):
@@ -87,11 +83,9 @@ class Login(object):
             self.port.delete(0, END)
             self.port.insert(0, 'port must be an integer')
             return
-        self.root.destroy()
         if self.chk.get():
             self.save_login(user_login_credentials)
-        client = Client(**user_login_credentials)
-        client.root.mainloop()
+        return user_login_credentials
 
     def cancel_session(self):
         self.root.destroy()
