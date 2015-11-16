@@ -100,7 +100,7 @@ class Client(object):
         '''
         if not chan1 or not chan2:
             return self.command_error(self._shared.__doc__)
-        self.rspd.like_channels = True
+        self.rspd.comp_chan_names = True
         query = 'NAMES %s\r\n' % chan1
         self.client.sendall(query)
         query = 'NAMES %s\r\n' % chan2
@@ -638,23 +638,23 @@ class Client(object):
     def input_handle(self, event):
         msg = self.entry.get()
         self.entry.delete(0, 'end')
-        if msg:
-            if msg.startswith('/'):
-                msg = msg.split() + [None]
-                msg_cmd = msg[0][1:].lower()
-                command = self.commands.get(msg_cmd)
-                if command and msg_cmd != "msg" and msg_cmd != "suser":
-                    command(msg[1])
-                elif command and msg_cmd == "msg":
-                    command(' '.join(msg[2:-1]), msg[1])
-                elif command and msg_cmd == "suser":
-                    command(msg[1], msg[2])
-                else:
-                    if self.scrollbar.get()[1] == 1.0:
-                        self.chat_log.see(END)
-                    return self.command_error('Unknown Command! Type /HELP for list of commands\n')
+        if not msg: return
+        if msg.startswith('/'):
+            msg = msg.split() + [None]
+            msg_cmd = msg[0][1:].lower()
+            command = self.commands.get(msg_cmd)
+            if command and msg_cmd != "msg" and msg_cmd != "suser":
+                command(msg[1])
+            elif command and msg_cmd == "msg":
+                command(' '.join(msg[2:-1]), msg[1])
+            elif command and msg_cmd == "suser":
+                command(msg[1], msg[2])
             else:
-                self.channel_msg(msg) 
+                if self.scrollbar.get()[1] == 1.0:
+                    self.chat_log.see(END)
+                return self.command_error('Unknown Command! Type /HELP for list of commands\n')
+        else:
+            self.channel_msg(msg) 
 
     def msg_buffer_chk(self):        
         socket_data = select.select([self.client], [], [], 0.01)
