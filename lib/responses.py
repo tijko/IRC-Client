@@ -3,6 +3,8 @@
 
 from Tkinter import *
 import os
+from collections import defaultdict
+
 
 class Response(object):
 
@@ -12,11 +14,9 @@ class Response(object):
         self.prefix_line = prefix
         self.ln_strip = lambda s: s.strip(':')
         self.chan = None
-        self.like_channels = False
-        self.channel1 = False
-        self.chancomp = set()
+        self.chan_names = defaultdict(list)
+        self.comp_chan_names = False
         self.log_links = False
-        self.chan_names = list()
         self.server_cmds = list()
 
     def whois_user_repl(self, user_data):
@@ -26,49 +26,40 @@ class Response(object):
         self.screen.see(END)
 
     def whois_chan_repl(self, chan_data):
-        if len(chan_data) == 2:
-            self.prefix_line("Server")
-            server_repl = ('Real Name: %s\n' % chan_data[0])
-            self.screen.insert(END, server_repl)
-            self.prefix_line("Server")
-            self.server_repl = ('Server: %s\n' % chan_data[1].strip(':'))
-            self.screen.insert(END, server_repl)
-            self.screen.see(END)
+        if len(chan_data) != 2: return
+        self.prefix_line("Server")
+        server_repl = ('Real Name: %s\n' % chan_data[0])
+        self.screen.insert(END, server_repl)
+        self.prefix_line("Server")
+        self.server_repl = ('Server: %s\n' % chan_data[1].strip(':'))
+        self.screen.insert(END, server_repl)
+        self.screen.see(END)
 
     def names_repl(self, userlist):
-        if not self.like_channels:
-            self.chan = userlist[1]
-            self.chan_names += map(self.ln_strip, userlist[2:])
-        elif self.like_channels and not self.channel1:
-            for name in userlist[2:]:
-                self.chancomp.add(name.strip(':'))
-        else:
-            self.chan_names += map(self.ln_strip, userlist[2:])
+        self.chan = userlist[1]
+        self.chan_names[userlist[1]] += map(self.ln_strip, userlist[2:])
 
     def end_names_repl(self, server_end):
-        if not self.like_channels:
+        if self.comp_chan_names and len(self.chan_names) < 2: return
+        if not self.comp_chan_names:
             self.prefix_line("Server")
             if not self.chan:
                 self.screen.insert(END, "Channel does not exist\n")
-                self.screen.see(END)
             else:
                 self.screen.insert(END, "Total Users in %s: %d\n" % 
-                                   (self.chan, len(self.chan_names)))
-                self.screen.insert(END, "%s\n" % str(self.chan_names))
-                self.screen.see(END)
-            self.chan_names = list()
-        elif self.like_channels and not self.channel1:
-            self.channel1 = True   
+                                   (self.chan, len(self.chan_names[self.chan])))
+                self.screen.insert(END, "%s\n" % ' '.join(self.chan_names[self.chan]))
         else:
-            self.channel1 = False
-            self.like_channels = False
-            like_users = list(self.chancomp.intersection(self.chan_names))
+            self.comp_chan_names = False
+            users = [j for i in self.chan_names.values() for j in i]
+            like_users = {i for i in users if users.count(i) > 1}
             self.prefix_line("Server")
             self.screen.insert(END, 'Shared users %d\n' % len(like_users))
-            self.screen.insert(END, '%s\n' % str(like_users))
-            self.screen.see(END)
-            self.chan_names = list()
-    
+            self.screen.insert(END, '%s\n' % ' '.join(like_users))
+        self.screen.see(END)
+        self.chan = None
+        self.chan_names = defaultdict(list)
+
     def info_repl(self, server_data):
         server_info_repl = ' '.join(map(self.ln_strip, server_data))
         self.prefix_line("Server") 
