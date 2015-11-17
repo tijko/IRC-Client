@@ -67,7 +67,7 @@ class Response(object):
         self.screen.see(END)
 
     def links_repl(self, server_data):
-        link_info = ' '.join(i for i in server_data[3:])
+        link_info = ' '.join(server_data[3:])
         self.prefix_line("Server")
         self.screen.insert(END, link_info + '\n')
         self.screen.see(END)
