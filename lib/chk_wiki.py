@@ -17,7 +17,6 @@ class Wiki(Thread):
         self.client = client
         self.window = window
         self.prefix_line = prefix
-        self.search_index = None
         self.query = query
         self.wiki_q = wiki_q
 
@@ -34,7 +33,6 @@ class Wiki(Thread):
         self.window.insert(END, "Enter '/WHATIS #from_above' or '/WHATIS n'\n")
         self.window.see(END)
         return self.select_alternate_article(a_tags)
-
 
     def select_alternate_article(self, links):
         choice = self.make_selection()
