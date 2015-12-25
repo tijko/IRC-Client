@@ -89,7 +89,7 @@ class Client(object):
         '''
            Usage: /NAMES <channel> --> List all nicks visible on channel.
         ''' 
-        if not chan is None: return self.command_error(self._names.__doc__)
+        if chan is None: return self.command_error(self._names.__doc__)
         query = 'NAMES %s\r\n' % chan
         self.cmd_names = True
         self.client.sendall(query)
