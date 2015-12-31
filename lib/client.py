@@ -10,6 +10,7 @@ import subprocess
 from Tkinter import *
 from chk_wiki import Wiki
 from responses import Response
+from chat_socket import ChatSocket
                    
 
 class Client(object):
@@ -23,7 +24,8 @@ class Client(object):
         self.nick = kwargs['nick']
         self.host = kwargs['host']
         self.create_window
-        self.connect_to_host
+        self.client = ChatSocket(self.host, self.port, self.chat_log)
+        self.server_login
         self.conn = False                                 
         self.paused = False 
         self.logging = False
@@ -397,11 +399,13 @@ class Client(object):
         self.conn = False
         if channel is None:
             self.client.close()
-            self.connect_to_host
+            self.client = ChatSocket(self.host, self.port, self.chat_log)
+            self.server_login
         if channel:
             self.channel = channel
             self.client.close()
-            self.connect_to_host
+            self.client = ChatSocket(self.host, self.port, self.chat_log)
+            self.server_login
 
     def _usermsg(self, msg, nick=None):
         '''
@@ -481,21 +485,12 @@ class Client(object):
         self.entry.focus_set()
         self.chat_log.see(END)
 
-    @property        
-    def connect_to_host(self):
-        self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        try:
-            self.client.connect((self.host, self.port))
-            self.client.setblocking(0)
-            self.server_login
-        except socket.error:
-           return self.command_error('Connection Failed! --> check host & port')
-            
     @property            
     def connection_drop(self):
         self.client.close()
         self.conn = False
-        self.connect_to_host
+        self.client = ChatSocket(self.host, self.port, self.chat_log)
+        self.server_login
         return self.command_error('Connection Dropped!')
 
     @property                    
@@ -655,13 +650,10 @@ class Client(object):
             self.channel_msg(msg) 
 
     def msg_buffer_chk(self):        
-        socket_data = select.select([self.client], [], [], 0.01)
+        socket_data = select.select([self.client.fileno], [], [], 0.01)
         if socket_data[0]:
-            try:
-                buffer_data = self.client.recvfrom(4096)[0]
-                self.buffer_data_handle(buffer_data)
-            except socket.error:
-                return self.command_error('Bad Connection!')
+            client_msg = self.client.recvfrom(4096)
+            self.buffer_data_handle(client_msg)
         self.root.update_idletasks()
         self.scrn_loop = self.chat_log.after(100, self.msg_buffer_chk)
     
