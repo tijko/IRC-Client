@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 
-import socket
 import time
 import os
 import select
@@ -163,11 +162,8 @@ class Client(object):
            Usage: /QUIT (optional <message>) --> Ends a client session from server.
         '''
         q_signal = 'QUIT %s\r\n'
-        try:
-            self.client.sendall(q_signal) 
-            self.client.close()
-        except socket.error:
-            pass
+        self.client.sendall(q_signal) 
+        self.client.close()
         if self.logging:
             self.log_file.close()
         self.root.destroy()
