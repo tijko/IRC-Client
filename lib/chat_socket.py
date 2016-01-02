@@ -46,6 +46,8 @@ class ChatSocket(object):
             chat_screen_errmsg = 'Error: Broken Pipe'
         elif error == errno.ENOTCONN:
             chat_screen_errmsg = 'Error: Transport end not Connected'
+        else:
+            chat_screen_errmsg = 'Error: %d' % error
         self.screen.insert(END, chat_screen_errmsg)
         self.screen.see(END)
 
