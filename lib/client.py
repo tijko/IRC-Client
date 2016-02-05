@@ -594,7 +594,8 @@ class Client(object):
 
     def open_link(self, tk_event):
         link = self.chat_log.tag_names(CURRENT)[0]
-        subprocess.Popen(["firefox", link]) # XXX
+        firefox_ps = subprocess.Popen(["firefox", link])
+        firefox_ps.wait()
 
     def chat_msg(self, channel, user, msg):
         if msg[0] == self.nick and channel != self.nick:
