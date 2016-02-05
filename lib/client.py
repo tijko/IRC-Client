@@ -543,15 +543,14 @@ class Client(object):
                                                         foreground="black")
 
     def buffer_data_handle(self, buffer_data):
-        if buffer_data:
-            for i in [j.split() for j in buffer_data.split('\r\n') if j]: # XXX
-                self.recv_msg = map(self.ln_strip, i)
-                if self.recv_msg[0] == 'PING':
-                    self.server_pong
-                elif len(self.recv_msg) >= 3: 
-                    self.msg_handle()       
-        else:
+        if not buffer_data:
             self.connection_drop
+        for i in filter(None, buffer_data.split('\r\n')):
+            self.recv_msg = map(self.ln_strip, i.split())
+            if self.recv_msg[0] == 'PING':
+                self.server_pong
+            elif len(self.recv_msg) >= 3: 
+                self.msg_handle()       
 
     def channel_join(self, user, channel):
         if user == self.nick and not isinstance(self.channel, list):
