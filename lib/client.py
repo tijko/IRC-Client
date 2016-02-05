@@ -442,21 +442,22 @@ class Client(object):
         self.chat_log.see(END)    
 
     def channel_msg(self, msg):
-        channel = msg.split()[0]
+        msg_tokens = msg.split()
+        channel = msg_tokens[0]
         if isinstance(self.channel, list) and channel not in self.channel:
             return self.command_error('Multiple channels open, specify a channel')
         elif isinstance(self.channel, list) and channel in self.channel:
             chan_msg = 'privmsg %s :' % msg + '\r\n'
             self.client.sendall(chan_msg)
             self.prefix_response(self.nick)
-            self.chat_log.insert(END, msg + '\n')
-            self.chat_log.see(END)
         else:
             chan_msg = 'privmsg %s :'  % self.channel + msg + '\r\n'
             self.client.sendall(chan_msg)
             self.prefix_response(self.nick)
-            self.chat_log.insert(END, msg + '\n')
-            self.chat_log.see(END)
+        for token in msg_tokens:
+            self.parse_msg(token)
+        self.chat_log.insert(END, '\n');
+        self.chat_log.see(END)
         if self.logging:
             self.log_file.write(msg + '\n')
 
@@ -543,7 +544,7 @@ class Client(object):
 
     def buffer_data_handle(self, buffer_data):
         if buffer_data:
-            for i in [j.split() for j in buffer_data.split('\r\n') if j]:
+            for i in [j.split() for j in buffer_data.split('\r\n') if j]: # XXX
                 self.recv_msg = map(self.ln_strip, i)
                 if self.recv_msg[0] == 'PING':
                     self.server_pong
@@ -579,7 +580,7 @@ class Client(object):
                 self.chat_log.see(END)
 
     def parse_msg(self, token):
-        if 'http' in token:
+        if token.startswith('http'):
             self.chat_log.tag_config(token, underline=1)
             self.chat_log.tag_bind(token, "<Enter>", 
                                    lambda e: self.chat_log.config(cursor="hand2"))
@@ -594,7 +595,7 @@ class Client(object):
 
     def open_link(self, tk_event):
         link = self.chat_log.tag_names(CURRENT)[0]
-        subprocess.Popen(["firefox", link])
+        subprocess.Popen(["firefox", link]) # XXX
 
     def chat_msg(self, channel, user, msg):
         if msg[0] == self.nick and channel != self.nick:
