@@ -9,7 +9,7 @@ import subprocess
 from Tkinter import *
 from chk_wiki import Wiki
 from responses import Response
-from chat_socket import ChatSocket
+from chat_socket import ChatSocket, socket_error
                    
 
 class Client(object):
@@ -495,7 +495,8 @@ class Client(object):
         if self.password:
             self.client.sendall('PASS %s\r\n' % self.password) 
         self.client.sendall('NICK %s\r\n' % self.nick)  
-        userdata = 'USER %s %s servername :%s\r\n' % (self.nick, self.host, self.user) 
+        userdata = 'USER %s %s servername :%s\r\n' % (self.nick, self.host, 
+                                                                 self.user) 
         self.client.sendall(userdata) 
         self.client.sendall('JOIN #%s\r\n' % self.channel.strip('#')) 
 
