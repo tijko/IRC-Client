@@ -16,11 +16,12 @@ class ChatSocket(object):
         self.screen = screen
         self.chat_client_socket = socket(AF_INET, SOCK_STREAM)
         self.chat_client_socket.connect((self.host, self.port))
-        self.chat_client_socket.setblocking(0)
+        self.chat_client_socket.settimeout(3)
 
     def sendall(self, msg):
+        self.msg = msg
         try:
-            self.chat_client_socket.sendall(msg)
+            self.chat_client_socket.sendall(self.msg)
         except socket_error, err:
             self._error_response(err[0])
 
@@ -42,12 +43,18 @@ class ChatSocket(object):
         return self.chat_client_socket.fileno()
 
     def _error_response(self, error):
+        retry = False
         if error == errno.EPIPE: 
             chat_screen_errmsg = 'Error: Broken Pipe'
         elif error == errno.ENOTCONN:
             chat_screen_errmsg = 'Error: Transport end not Connected'
+        elif error == errno.ETIMEDOUT:
+            chat_screen_errmsg = 'Error: Connection Timed out...retrying'
+            retry = True
         else:
             chat_screen_errmsg = 'Error: %d' % error
         self.screen.insert(END, chat_screen_errmsg)
         self.screen.see(END)
+        if retry:
+            self.sendall(self.msg)
 
