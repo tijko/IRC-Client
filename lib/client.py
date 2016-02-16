@@ -9,7 +9,7 @@ import subprocess
 from Tkinter import *
 from chk_wiki import Wiki
 from responses import Response
-from chat_socket import ChatSocket, socket_error
+from chat_socket import ChatSocket
                    
 
 class Client(object):
