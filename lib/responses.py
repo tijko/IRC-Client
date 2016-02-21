@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 #-*- coding: utf-8 -*-
 
-from Tkinter import *
 import os
 from collections import defaultdict
+
+from lib import END
 
 
 class Response(object):
