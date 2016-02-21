@@ -6,11 +6,12 @@ import os
 import select
 import Queue
 import subprocess
-from Tkinter import *
 from chk_wiki import Wiki
 from responses import Response
 from chat_socket import ChatSocket
-                   
+ 
+from lib import Entry, Scrollbar, Text, WORD, END, N, S, E, W
+
 
 class Client(object):
     
