@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from lib import Tk 
 from lib.login import Login
 from lib.client import Client
-from Tkinter import *
 
 
 class PyChat(object):
