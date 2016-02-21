@@ -3,9 +3,10 @@
 
 import errno
 
-from Tkinter import *
 from socket import error as socket_error
 from socket import socket, AF_INET, SOCK_STREAM
+
+from lib import END
 
 
 class ChatSocket(object):
