@@ -6,7 +6,8 @@ import time
 import Queue
 from threading import Thread
 from BeautifulSoup import BeautifulSoup
-from Tkinter import *
+
+from lib import END
 
 
 class Wiki(Thread):
