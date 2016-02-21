@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from Tkinter import *
 from client import Client
 import ConfigParser
 import os
+
+from lib import Entry, Label, Button, Checkbutton, IntVar, END
 
 
 class Login(object):
