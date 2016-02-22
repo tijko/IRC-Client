@@ -1,9 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from client import Client
-import ConfigParser
 import os
+
+try:
+    from ConfigParser import ConfigParser
+except ImportError:
+    from configparser import ConfigParser
+
+from .client import Client
 
 from lib import Entry, Label, Button, Checkbutton, IntVar, END
 
@@ -58,20 +63,22 @@ class Login(object):
 
     def load_saved(self):
         if os.path.isfile(os.environ['HOME'] + '/.pychat'):
-            login_settings = ConfigParser.ConfigParser()
+            login_settings = ConfigParser()
             login_settings.read(os.environ['HOME'] + '/.pychat')
             credentials = login_settings.items('PyChat_Login')
             for field, value in credentials:
+                if field == 'port':
+                    value = int(value)
                 getattr(self, field).insert(0, value)
             self.chkbx.select()
 
     def save_login(self, credentials):
         home_dir = os.environ['HOME']
-        login_file = ConfigParser.RawConfigParser()
+        login_file = ConfigParser()
         login_file.add_section('PyChat_Login')
         for credential in credentials:
             login_file.set('PyChat_Login', credential, credentials[credential])
-        with open(home_dir + '/.pychat', 'wb') as f:
+        with open(home_dir + '/.pychat', 'w') as f:
             login_file.write(f)        
 
     def login_credentials(self):
@@ -79,7 +86,7 @@ class Login(object):
         credentials = map(getattr(Entry, 'get'), self.login_fields)
         user_login_credentials = dict(zip(fields, credentials))
         try:
-            user_login_credentials['port'] = int(user_login_credentials['port'])
+            int(user_login_credentials['port'])
         except ValueError:
             self.port.delete(0, END)
             self.port.insert(0, 'port must be an integer')
