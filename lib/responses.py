@@ -37,7 +37,7 @@ class Response(object):
         self.screen.see(END)
 
     def names_repl(self, userlist):
-        self.chan = userlist[1]
+        self.chan = userlist[1] # XXX python3 index error out of range
         self.chan_names[userlist[1]] += map(self.ln_strip, userlist[2:])
 
     def end_names_repl(self, server_end):
