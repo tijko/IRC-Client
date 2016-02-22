@@ -17,27 +17,27 @@ class ChatSocket(object):
         self.screen = screen
         self.chat_client_socket = socket(AF_INET, SOCK_STREAM)
         self.chat_client_socket.connect((self.host, self.port))
-        self.chat_client_socket.settimeout(3)
+        self.chat_client_socket.settimeout(3) # XXX connection timesout on bad shutdowns/restarts
 
     def sendall(self, msg):
-        self.msg = msg
+        self.msg = msg.encode('utf-8')
         try:
             self.chat_client_socket.sendall(self.msg)
-        except socket_error, err:
-            self._error_response(err[0])
+        except socket_error as e:
+            self._error_response(e.errno)
 
     def recvfrom(self, msg_buffer_len):
         try:
             client_response = self.chat_client_socket.recvfrom(4096)
-            return client_response[0]
-        except socket_error, err:
-            self._error_response(err[0])
+            return client_response[0].decode('utf-8')
+        except socket_error as e:
+            self._error_response(e.errno)
 
     def close(self):
         try:
             self.chat_client_socket.close()
-        except socket_error, err:
-            self._error_response(err[0])
+        except socket_error as e:
+            self._error_response(e.errno)
 
     @property
     def fileno(self):
