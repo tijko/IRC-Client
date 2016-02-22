@@ -21,6 +21,7 @@ class PyChat(object):
     def create_client(self):
         credentials = self.login.login_credentials()
         credentials['root'] = self.root
+        credentials['port'] = int(credentials['port'])
         self.reset()
         self.client = Client(**credentials)
 
