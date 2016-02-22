@@ -3,9 +3,14 @@
 
 import requests
 import time
-import Queue
 from threading import Thread
-from BeautifulSoup import BeautifulSoup
+
+try:
+    from Queue import Queue
+    from BeautifulSoup import BeautifulSoup
+except ImportError:
+    from queue import Queue
+    from bs4 import BeautifulSoup
 
 from lib import END
 
