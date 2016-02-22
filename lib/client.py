@@ -4,13 +4,18 @@
 import time
 import os
 import select
-import Queue
 import subprocess
-from chk_wiki import Wiki
-from responses import Response
-from chat_socket import ChatSocket
+
+from .chk_wiki import Wiki
+from .responses import Response
+from .chat_socket import ChatSocket
  
-from lib import Entry, Scrollbar, Text, WORD, END, N, S, E, W
+from lib import Entry, Scrollbar, Text, WORD, CURRENT, END, N, S, E, W
+
+try:
+    from Queue import Queue
+except ImportError:
+    from queue import Queue
 
 
 class Client(object):
@@ -320,7 +325,7 @@ class Client(object):
         if lookup is None:
             return self.command_error(self._whatis.__doc__)
         if not self.search:        
-            self.wiki_q = Queue.Queue()
+            self.wiki_q = Queue()
             self.wiki = Wiki(self, self.chat_log, self.prefix_response, 
                                                     lookup, self.wiki_q)
             self.wiki.start()
@@ -548,7 +553,7 @@ class Client(object):
         if not buffer_data:
             self.connection_drop
         for i in filter(None, buffer_data.split('\r\n')):
-            self.recv_msg = map(self.ln_strip, i.split())
+            self.recv_msg = list(map(self.ln_strip, i.split()))
             if self.recv_msg[0] == 'PING':
                 self.server_pong
             elif len(self.recv_msg) >= 3: 
@@ -635,11 +640,11 @@ class Client(object):
             msg = msg.split() + [None]
             msg_cmd = msg[0][1:].lower()
             command = self.commands.get(msg_cmd)
-            if command and msg_cmd != "msg" and msg_cmd != "suser":
+            if command and msg_cmd != 'msg' and msg_cmd != 'suser':
                 command(msg[1])
-            elif command and msg_cmd == "msg":
-                command(' '.join(msg[2:-1]), msg[1])
-            elif command and msg_cmd == "suser":
+            elif command and msg_cmd == 'msg':
+                command(b' '.join(msg[2:-1]), msg[1])
+            elif command and msg_cmd == 'suser':
                 command(msg[1], msg[2])
             else:
                 if self.scrollbar.get()[1] == 1.0:
@@ -648,7 +653,7 @@ class Client(object):
         else:
             self.channel_msg(msg) 
 
-    def msg_buffer_chk(self):        
+    def msg_buffer_chk(self):
         socket_data = select.select([self.client.fileno], [], [], 0.01)
         if socket_data[0]:
             client_msg = self.client.recvfrom(4096)
