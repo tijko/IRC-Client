@@ -6,7 +6,7 @@ import errno
 from socket import error as socket_error
 from socket import socket, AF_INET, SOCK_STREAM
 
-from lib import END
+from lib import TclError, END
 
 
 class ChatSocket(object):
@@ -29,7 +29,11 @@ class ChatSocket(object):
     def recvfrom(self, msg_buffer_len):
         try:
             client_response = self.chat_client_socket.recvfrom(4096)
-            return client_response[0].decode('utf-8')
+            try:
+                decoded_response = client_response[0].decode('utf-8')
+            except TclError:
+                return 'Decode error'
+            return decoded_response
         except socket_error as e:
             self._error_response(e.errno)
 
