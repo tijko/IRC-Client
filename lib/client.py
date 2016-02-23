@@ -10,7 +10,7 @@ from .chk_wiki import Wiki
 from .responses import Response
 from .chat_socket import ChatSocket
  
-from lib import Entry, Scrollbar, Text, WORD, CURRENT, END, N, S, E, W
+from lib import Entry, Scrollbar, Text, TclError, WORD, CURRENT, END, N, S, E, W
 
 try:
     from Queue import Queue
