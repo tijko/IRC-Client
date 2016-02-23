@@ -552,6 +552,7 @@ class Client(object):
     def buffer_data_handle(self, buffer_data):
         if not buffer_data:
             self.connection_drop
+            return
         for i in filter(None, buffer_data.split('\r\n')):
             self.recv_msg = list(map(self.ln_strip, i.split()))
             if self.recv_msg[0] == 'PING':
