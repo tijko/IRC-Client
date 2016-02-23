@@ -597,7 +597,10 @@ class Client(object):
             self.chat_log.insert(END, token, token)
             self.chat_log.insert(END, ' ')
         else:
-            self.chat_log.insert(END, token + ' ')
+            try: # XXX catch unicode
+                self.chat_log.insert(END, token + ' ')
+            except TclError:
+                self.chat_log.insert(END, '~unicodeErr? ')
 
     def open_link(self, tk_event):
         link = self.chat_log.tag_names(CURRENT)[0]
