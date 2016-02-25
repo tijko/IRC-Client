@@ -19,45 +19,46 @@ class Login(object):
         self.root = root
         self.runclient_cb = runclient_cb
         self.chk = IntVar()
-        self.host_label = Label(self.root, text="Host:").grid(row=0, 
-                                                              column=0, 
-                                                              padx=5, 
-                                                              sticky="W")
-        self.host = Entry(self.root, relief="ridge")
+        self.host_label = Label(self.root, text='Host:', 
+                                font='incolsolata').grid(row=0, column=0,
+                                                         padx=5, sticky='W')
+        self.host = Entry(self.root, relief='ridge', font='incolsolata')
         self.host.grid(row=0, column=1, pady=(15,5))
-        self.port_label = Label(self.root, text="Port:").grid(row=1, 
-                                                              column=0, 
-                                                              padx=5, 
-                                                              sticky="W")
-        self.port = Entry(self.root)
+        self.port_label = Label(self.root, text='Port:',
+                                font='incolsolata').grid(row=1, column=0, 
+                                                         padx=5, sticky='W')
+        self.port = Entry(self.root, font='incolsolata')
         self.port.grid(row=1, column=1, pady=5)
-        self.channel_label = Label(self.root, text="Channel:").grid(row=2, 
-                                                                    padx=5, 
-                                                                    sticky="W")
-        self.channel = Entry(self.root)
+        self.channel_label = Label(self.root, text='Channel:',
+                                   font='incolsolata').grid(row=2, padx=5, 
+                                                            sticky='W')
+        self.channel = Entry(self.root, font='incolsolata')
         self.channel.grid(row=2, column=1, pady=5)
-        self.user_label = Label(self.root, text="User:").grid(row=3, 
-                                                              padx=5, 
-                                                              sticky="W")
-        self.user = Entry(self.root)
+        self.user_label = Label(self.root, text='User:',
+                                font='incolsolata').grid(row=3, padx=5, 
+                                                         sticky='W')
+        self.user = Entry(self.root, font='incolsolata')
         self.user.grid(row=3, column=1, pady=5)
-        self.nick_label = Label(self.root, text="Nick:").grid(row=4, 
-                                                              padx=5, 
-                                                              sticky="W")
-        self.nick = Entry(self.root)
+        self.nick_label = Label(self.root, text='Nick:',
+                                font='incolsolata').grid(row=4, padx=5, 
+                                                         sticky='W')
+        self.nick = Entry(self.root, font='incolsolata')
         self.nick.grid(row=4, column=1, pady=5)
-        self.password_label = Label(self.root, text="Password:").grid(row=5, 
-                                                                      padx=5, 
-                                                                      sticky="W")
-        self.password = Entry(self.root, show='*')
+        self.password_label = Label(self.root, text='Password:',
+                                    font='incolsolata').grid(row=5, padx=5, 
+                                                             sticky='W')
+        self.password = Entry(self.root, show='*', font='incolsolata')
         self.password.grid(row=5, column=1, pady=5)
         self.login_fields = [self.port, self.host, self.channel, 
                              self.user, self.nick, self.password]
-        self.ok = Button(self.root, text="ok", command=self.runclient_cb)
+        self.ok = Button(self.root, text='ok', 
+                         font='incolsolata', command=self.runclient_cb)
         self.ok.grid(row=6, column=0, padx=10, pady=10)
-        self.cancel = Button(self.root, text="cancel", command=self.cancel_session)
+        self.cancel = Button(self.root, text='cancel', 
+                             font='incolsolata', command=self.cancel_session)
         self.cancel.grid(row=6, column=1, padx=10, pady=10)
-        self.chkbx = Checkbutton(self.root, text="remember me", variable=self.chk)
+        self.chkbx = Checkbutton(self.root, text='remember me', 
+                                 font='incolsolata', variable=self.chk)
         self.chkbx.grid(row=7, column=0, padx=5, pady=5)
         self.load_saved()
 
