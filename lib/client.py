@@ -97,7 +97,7 @@ class Client(object):
            Usage: /NAMES <channel> --> List all nicks visible on channel.
         ''' 
         if chan is None: return self.command_error(self._names.__doc__)
-        query = 'NAMES %s\r\n' % chan
+        query = 'NAMES {}\r\n'.format(chan)
         self.cmd_names = True
         self.client.sendall(query)
 
@@ -108,9 +108,9 @@ class Client(object):
         if not all([chan1, chan2]):
             return self.command_error(self._shared.__doc__)
         self.rspd.comp_chan_names = True
-        query = 'NAMES %s\r\n' % chan1
+        query = 'NAMES {}\r\n'.format(chan1)
         self.client.sendall(query)
-        query = 'NAMES %s\r\n' % chan2
+        query = 'NAMES {}\r\n'.format(chan2)
         self.client.sendall(query)
 
     def _whois(self, query=None):
@@ -119,7 +119,7 @@ class Client(object):
         '''
         if query is None:
             return self.command_error(self._whois.__doc__)
-        query = 'WHOIS %s\r\n' % query
+        query = 'WHOIS {}\r\n'.format(query)
         self.client.sendall(query)
 
     def _info(self, srv=None):
@@ -129,9 +129,9 @@ class Client(object):
            optional parameter defaults to current server.
         '''
         if srv is None:
-            query = 'INFO %s\r\n' % self.server
+            query = 'INFO {}\r\n'.format(self.server)
         else:
-            query = 'INFO %s\r\n' % srv
+            query = 'INFO {}\r\n'.format(srv)
         self.client.sendall(query)
 
     def _links(self, srv=None):
@@ -141,7 +141,7 @@ class Client(object):
         if srv is None:
             query = 'LINKS \r\n'
         else:
-            query = 'LINKS %s\r\n' % srv
+            query = 'LINKS {}\r\n'.format(srv)
         self.client.sendall(query)
 
     def _stats(self, flags=None):
@@ -158,16 +158,16 @@ class Client(object):
 
                L = Information about current server connections
         '''
-        if not flags:
+        if not flags: # XXX check range
             return self.command_error(self._stats.__doc__)
-        query = 'STATS %s %s\r\n' % (flags, self.server)
+        query = 'STATS {} {}\r\n'.format(flags, self.server)
         self.client.sendall(query)
 
     def _quit(self, msg=None):
         '''
            Usage: /QUIT (optional <message>) --> Ends a client session from server.
         '''
-        q_signal = 'QUIT %s\r\n'
+        q_signal = 'QUIT %s\r\n' # XXX set to None if msg is None?
         self.client.sendall(q_signal) 
         self.client.close()
         if self.logging:
@@ -186,7 +186,7 @@ class Client(object):
         else: 
             self._part(self.channel)
         self.conn = False
-        chan_join = 'JOIN %s\r\n' % chan
+        chan_join = 'JOIN {}\r\n'.format(chan)
         self.client.sendall(chan_join)
         self.channel = chan.strip('#')
 
@@ -197,7 +197,7 @@ class Client(object):
         if chan is None or not self.channel:
             return self.command_error(self._wjoin.__doc__)
         self.channel = [self.channel, chan]
-        chan_join = 'JOIN %s\r\n' % chan
+        chan_join = 'JOIN {}\r\n'.format(chan)
         self.client.sendall(chan_join)            
 
     def _part(self, chan=None):
@@ -208,17 +208,17 @@ class Client(object):
             return self.command_error(self._part.__doc__)
         if isinstance(self.channel, str) and chan == self.channel: 
             self.channel = None
-            chan_part = 'PART %s\r\n' % chan
+            chan_part = 'PART {}\r\n'.format(chan)
             self.client.sendall(chan_part)
         elif isinstance(self.channel, list) and chan in self.channel:
             self.channel.remove(chan)
-            chan_part = 'PART %s\r\n' % chan
+            chan_part = 'PART {}\r\n'.format(chan)
             self.client.sendall(chan_part)
             if not self.channel:
                 self.channel = None
         else:
-            self.prefix_response("Server")
-            self.chat_log.insert(END, "You are not currently in %s\n" % chan)
+            self.prefix_response('Server')
+            self.chat_log.insert(END, 'You are not currently in {}\n'.format(chan))
             self.chat_log.see(END)
 
     def _noise(self, flags=None):
@@ -262,7 +262,7 @@ class Client(object):
         '''
         if chan is None:
             return self.command_error(self._topic.__doc__)
-        topic = 'TOPIC %s\r\n' % chan
+        topic = 'TOPIC {}\r\n'.format(chan)
         self.client.sendall(topic)
 
     def _version(self, server=None):
@@ -271,7 +271,7 @@ class Client(object):
         '''
         if server is None:
             return self.command_error(self._version.__doc__)
-        ver_chk = 'VERSION %s\r\n' % server
+        ver_chk = 'VERSION {}\r\n'.format(server)
         self.cmd_ver = True
         self.client.sendall(ver_chk)
 
@@ -282,9 +282,8 @@ class Client(object):
            currently connected to.
         '''
         if query is None:
-            self.prefix_response("Server")
-            self.chat_log.insert(END, 'You are currently connected to server <%s> and in channel <%s>\n' 
-                                       % (self.server, str(self.channel))) 
+            self.prefix_response('Server')
+            self.chat_log.insert(END, 'You are currently connected to server <{}> and in channel <{}>\n'.format(self.server, self.channel)) 
             self.chat_log.see(END)
 
     def _blocklist(self, nick=None):
@@ -292,8 +291,8 @@ class Client(object):
            Usage: /BLOCKLIST --> Shows all the nicks currently being blocked.
         '''
         if nick is None:
-            self.prefix_response("Server")
-            self.chat_log.insert(END, 'Blocked Nicks: %s\n' % str(self.blocked))
+            self.prefix_response('Server')
+            self.chat_log.insert(END, 'Blocked Nicks: {}\n'.format(self.blocked))
             self.chat_log.see(END)
 
     def _nick(self, nick=None):
@@ -304,7 +303,7 @@ class Client(object):
             return self.command_error(self._nick.__doc__)
         self.nick = nick
         self.rspd.nick = nick
-        ident = "NICK %s\r\n" % self.nick
+        ident = 'NICK {}\r\n'.format(self.nick)
         self.client.sendall(ident)
         if self.channel: 
             self._join(self.channel)
@@ -315,7 +314,7 @@ class Client(object):
         '''
         if nick is None:
             return self.command_error(self._whowas.__doc__)
-        whowas_msg = "WHOWAS %s\r\n" % nick
+        whowas_msg = 'WHOWAS {}\r\n'.format(nick)
         self.client.sendall(whowas_msg)
 
     def _whatis(self, lookup=None):
@@ -344,8 +343,8 @@ class Client(object):
         '''
         if nick is not None:
             return self.command_error(self._whoami.__doc__)
-        self.prefix_response("Server")
-        self.chat_log.insert(END, "You are currently known as => %s\n" % self.nick)
+        self.prefix_response('Server')
+        self.chat_log.insert(END, 'You are currently known as => {}\n'.format(self.nick))
         self.chat_log.see(END)
 
     def _list(self, log=None):
@@ -353,10 +352,10 @@ class Client(object):
            Usage: /LIST (optional <log>) --> Will show all the channels available and their topic.
         '''
         if log is None:
-            lst_msg = "LIST\r\n"
+            lst_msg = 'LIST\r\n'
             self.client.sendall(lst_msg)
         elif log == 'l':
-            lst_msg = "LIST\r\n"
+            lst_msg = 'LIST\r\n'
             self.client.sendall(lst_msg)
             self.rspd.log_links = True
 
@@ -365,8 +364,8 @@ class Client(object):
            Usage: /HELP (optional <command>) --> Show help information for/on valid commands.
         '''
         if cmd is None:
-            self.prefix_response("Server")
-            new_msg = 'Commands <<' + ' - '.join(self.commands.keys()) + '>>\n'
+            self.prefix_response('Server')
+            new_msg = 'Commands <<{}>>\n'.format(' - '.join(self.commands.keys()))
             self.chat_log.insert(END, new_msg)
             self.chat_log.see(END)
             return
@@ -374,20 +373,20 @@ class Client(object):
             func_info = cmd.lower() 
             self.command_error(self.commands[func_info].__doc__)
         except KeyError:
-            self.prefix_response("Server")
+            self.prefix_response('Server')
             new_msg = 'Unknown Command! Type /HELP for a list of commands\n'
             self.chat_log.insert(END, new_msg)
             self.chat_log.see(END)
 
     def _pause(self, toggle=None):
         '''
-           Usage: /PAUSE <(on/off)> --> This will pause the channel's "chatter"
+           Usage: /PAUSE <(on/off)> --> This will pause the channel's 'chatter'
 
-           Pass in "/PAUSE on" to turn on pause or
+           Pass in '/PAUSE on' to turn on pause or
 
-           use "/PAUSE off" to turn off pause "unpause".
+           use '/PAUSE off' to turn off pause 'unpause'.
         '''
-        if toggle is None or toggle not in ["on", "off"]:
+        if toggle is None or toggle not in ['on', 'off']:
             return self.command_error(self._pause.__doc__)
         if toggle == 'on':
             self.paused = True
@@ -416,35 +415,34 @@ class Client(object):
         if nick is None:
             return self.command_error(self._usermsg.__doc__)
         else:
-            new_msg = "privmsg %s :" % nick + msg 
-            self.client.sendall(new_msg + '\r\n')
+            new_msg = 'privmsg {} {} :\r\n'.format(nick, msg)
+            self.client.sendall(new_msg)
             self.prefix_response(self.nick)
-            window_msg = nick + ": " + msg 
-            self.chat_log.insert(END, window_msg + '\n') 
+            self.chat_log.insert(END, '{}: {}\n'.format(nick, msg)) 
             self.chat_log.see(END)
                             
     def _log(self, toggle=None):
         '''
            Usage: /LOG <(on/off)> --> Logs the chat in current channel to a file.
 
-           Pass in "/LOG on" to open the log or
+           Pass in '/LOG on' to open the log or
 
-           use "/LOG off" to close the log. 
+           use '/LOG off' to close the log. 
         '''
-        if toggle is None or toggle not in ["on", "off"]:
+        if toggle is None or toggle not in ['on', 'off']:
             return self.command_error(self._log.__doc__)
         if toggle == 'on':
             self.logging = True
             self.log_file = open(os.path.join(os.environ['HOME'], 'chat_log.txt'), 'a')
-            self.log_file.write(' -- ' + time.ctime() + ' --\n')
+            self.log_file.write(' -- {} --\n'.format(time.ctime()))
         if toggle == 'off':
             if self.logging:
                 self.log_file.close()
             self.logging = False
 
     def command_error(self, cmd_doc):
-        self.prefix_response("Server")
-        self.chat_log.insert(END, cmd_doc + '\n')
+        self.prefix_response('Server')
+        self.chat_log.insert(END, '{}\n'.format(cmd_doc))
         self.chat_log.see(END)    
 
     def channel_msg(self, msg):
@@ -453,11 +451,11 @@ class Client(object):
         if isinstance(self.channel, list) and channel not in self.channel:
             return self.command_error('Multiple channels open, specify a channel')
         elif isinstance(self.channel, list) and channel in self.channel:
-            chan_msg = 'privmsg %s :' % msg + '\r\n'
+            chan_msg = 'privmsg {} :\r\n'.format(msg)
             self.client.sendall(chan_msg)
             self.prefix_response(self.nick)
         else:
-            chan_msg = 'privmsg %s :'  % self.channel + msg + '\r\n'
+            chan_msg = 'privmsg {} :{} \r\n'.format(self.channel, msg)
             self.client.sendall(chan_msg)
             self.prefix_response(self.nick)
         for token in msg_tokens:
@@ -465,26 +463,27 @@ class Client(object):
         self.chat_log.insert(END, '\n');
         self.chat_log.see(END)
         if self.logging:
-            self.log_file.write(msg + '\n')
+            self.log_file.write('{}\n'.format(msg))
 
     @property
     def create_window(self):
-        self.root.geometry("700x450+400+165")
+        self.root.geometry('700x450+400+165')
         self.scrollbar = Scrollbar(self.root)
         self.scrollbar.grid(column=1, rowspan=2, sticky=E+S+N)
-        self.chat_log = Text(self.root, bg="black", fg="green2",      
-                             wrap=WORD, yscrollcommand=self.scrollbar.set)
+        self.chat_log = Text(self.root, bg='black', fg='green2',
+                             font=('incolsolata', 10), wrap=WORD, 
+                             yscrollcommand=self.scrollbar.set)
         self.chat_log.grid(row=0, column=0, sticky=N+S+E+W)
         self.scrollbar.config(command=self.chat_log.yview)
         self.scrn_loop = self.chat_log.after(100, self.msg_buffer_chk)
-        self.entry = Entry(self.root, bg="black", fg="green2", 
-                                     insertbackground="green2")
+        self.entry = Entry(self.root, bg='black', fg='green2', 
+                           font=('incolsolata', 10), insertbackground='green2')
         self.entry.bind('<Return>', self.input_handle)
         self.entry.grid(row=1, column=0, sticky=S+E+W)
         self.root.grid_rowconfigure(0, weight=1)
         self.root.grid_columnconfigure(0, weight=1)
-        self.chat_log.insert(END, 'ATTEMPTING TO CONNECT TO %s #%s\n' % 
-                                              (self.host, self.channel))
+        self.chat_log.insert(END, 'ATTEMPTING TO CONNECT TO {} #{}\n'.format( 
+                                              self.host, self.channel))
         self.entry.focus_set()
         self.chat_log.see(END)
 
@@ -499,18 +498,18 @@ class Client(object):
     @property                    
     def server_login(self):
         if self.password:
-            self.client.sendall('PASS %s\r\n' % self.password) 
-        self.client.sendall('NICK %s\r\n' % self.nick)  
-        userdata = 'USER %s %s servername :%s\r\n' % (self.nick, self.host, 
-                                                                 self.user) 
+            self.client.sendall('PASS {}\r\n'.format(self.password))
+        self.client.sendall('NICK {}\r\n'.format(self.nick))
+        userdata = 'USER {} {} servername :{}\r\n'.format(self.nick, self.host,
+                                                                 self.user)
         self.client.sendall(userdata) 
-        self.client.sendall('JOIN #%s\r\n' % self.channel.strip('#')) 
+        self.client.sendall('JOIN #{}\r\n'.format(self.channel.strip('#')))
 
     @property
     def server_pong(self):
-        self.client.sendall('PONG ' + self.recv_msg[1] + '\r\n')
-        self.prefix_response("Server")
-        self.chat_log.insert(END, "Channel Ping@ ==> %s\n" % time.ctime())
+        self.client.sendall('PONG {}\r\n'.format(self.recv_msg[1]))
+        self.prefix_response('Server')
+        self.chat_log.insert(END, 'Channel Ping@ ==> {}\n'.format(time.ctime()))
         if self.scrollbar.get()[1] == 1.0:
             self.chat_log.see(END)
 
@@ -519,35 +518,35 @@ class Client(object):
         prefix = prefix_name + ' ' * (16 - len(prefix_name)) + '| '
         pos = float(self.chat_log.index(END)) - 1
         self.chat_log.insert(END, prefix)
-        if prefix_name == "Server":
-            self.chat_log.tag_add("server", str(pos), str(pos + 0.16))
-            self.chat_log.tag_config("server", background="gold", 
-                                                    foreground="black")
+        if prefix_name == 'Server':
+            self.chat_log.tag_add('server', str(pos), str(pos + 0.16))
+            self.chat_log.tag_config('server', background='gold', 
+                                                    foreground='black')
         elif prefix_name == self.nick:
-            self.chat_log.tag_add("user", str(pos), str(pos + 0.16))
-            self.chat_log.tag_config("user", background="turquoise1",
-                                                    foreground="black")
+            self.chat_log.tag_add('user', str(pos), str(pos + 0.16))
+            self.chat_log.tag_config('user', background='turquoise1',
+                                                    foreground='black')
         else:
             if peer_state == 'response':
-                self.chat_log.tag_add("peer_response", str(pos), str(pos + 0.16))
-                self.chat_log.tag_config("peer_response", background="green2",
-                                                        foreground="black")
+                self.chat_log.tag_add('peer_response', str(pos), str(pos + 0.16))
+                self.chat_log.tag_config('peer_response', background='green2',
+                                                        foreground='black')
             elif peer_state == 'enter':
-                self.chat_log.tag_add("peer_enter", str(pos), str(pos + 0.16))
-                self.chat_log.tag_config("peer_enter", background="red2",
-                                                        foreground="black")
+                self.chat_log.tag_add('peer_enter', str(pos), str(pos + 0.16))
+                self.chat_log.tag_config('peer_enter', background='red2',
+                                                        foreground='black')
             elif peer_state == 'directed':
-                self.chat_log.tag_add("peer_directed", str(pos), str(pos + 0.16))
-                self.chat_log.tag_config("peer_directed", background="violetred1",
-                                                           foreground="black")
+                self.chat_log.tag_add('peer_directed', str(pos), str(pos + 0.16))
+                self.chat_log.tag_config('peer_directed', background='violetred1',
+                                                           foreground='black')
             elif peer_state == 'private':
-                self.chat_log.tag_add("peer_private", str(pos), str(pos + 0.16))
-                self.chat_log.tag_config("peer_private", background="purple",
-                                                          foreground="black")
+                self.chat_log.tag_add('peer_private', str(pos), str(pos + 0.16))
+                self.chat_log.tag_config('peer_private', background='purple',
+                                                          foreground='black')
             else:
-                self.chat_log.tag_add("peer_leave", str(pos), str(pos + 0.16))
-                self.chat_log.tag_config("peer_leave", background="royal blue",
-                                                        foreground="black")
+                self.chat_log.tag_add('peer_leave', str(pos), str(pos + 0.16))
+                self.chat_log.tag_config('peer_leave', background='royal blue',
+                                                        foreground='black')
 
     def buffer_data_handle(self, buffer_data):
         if not buffer_data:
@@ -564,8 +563,8 @@ class Client(object):
         if user == self.nick and not isinstance(self.channel, list):
             self.channel = channel 
             if not self.conn:
-                self.chat_log.insert(END, 'SUCCESSFULLY CONNECTED TO %s\n' % self.host)
-            self.chat_log.insert(END, "SUCCESSFULLY JOINED %s\n" % channel)
+                self.chat_log.insert(END, 'SUCCESSFULLY CONNECTED TO {}\n'.format(self.host))
+            self.chat_log.insert(END, 'SUCCESSFULLY JOINED {}\n'.format(channel))
             self.chat_log.see(END)
         elif user != self.nick and self.verbose:
             if isinstance(self.channel, list) and channel not in self.channel:
@@ -573,7 +572,7 @@ class Client(object):
             else:
                 self.channel = channel
             self.prefix_response(user, 'enter')
-            new_msg = "entered --> %s\n" % channel
+            new_msg = 'entered --> {}\n'.format(channel)
             self.chat_log.insert(END, new_msg)
             if self.scrollbar.get()[1] == 1.0:
                 self.chat_log.see(END)
@@ -581,7 +580,7 @@ class Client(object):
     def channel_quit(self, user, chan): 
         if user != self.nick and self.verbose:
             self.prefix_response(user, 'leave')
-            new_msg = "left --> %s\n" % chan 
+            new_msg = 'left --> {}\n'.format(chan)
             self.chat_log.insert(END, new_msg)
             if self.scrollbar.get()[1] == 1.0:
                 self.chat_log.see(END)
@@ -589,11 +588,11 @@ class Client(object):
     def parse_msg(self, token):
         if token.startswith('http'):
             self.chat_log.tag_config(token, underline=1)
-            self.chat_log.tag_bind(token, "<Enter>", 
-                                   lambda e: self.chat_log.config(cursor="hand2"))
-            self.chat_log.tag_bind(token, "<Leave>", 
-                                   lambda e: self.chat_log.config(cursor=""))
-            self.chat_log.tag_bind(token, "<Button-1>", 
+            self.chat_log.tag_bind(token, '<Enter>', 
+                                   lambda e: self.chat_log.config(cursor='hand2'))
+            self.chat_log.tag_bind(token, '<Leave>', 
+                                   lambda e: self.chat_log.config(cursor=''))
+            self.chat_log.tag_bind(token, '<Button-1>', 
                                    lambda e: self.open_link(e))
             self.chat_log.insert(END, token, token)
             self.chat_log.insert(END, ' ')
@@ -605,7 +604,7 @@ class Client(object):
 
     def open_link(self, tk_event):
         link = self.chat_log.tag_names(CURRENT)[0]
-        firefox_ps = subprocess.Popen(["firefox", link])
+        firefox_ps = subprocess.Popen(['firefox', link])
         firefox_ps.wait()
 
     def chat_msg(self, channel, user, msg):
@@ -622,7 +621,7 @@ class Client(object):
         if self.scrollbar.get()[1] == 1.0:
             self.chat_log.see(END)
         if self.logging:
-            self.log_file.write(' '.join(msg) + '\n') 		
+            self.log_file.write('{}\n'.format(' '.join(msg)))
 
     def server_reply_msg(self, user, cmd):
         self.server = user
