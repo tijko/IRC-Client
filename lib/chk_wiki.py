@@ -27,15 +27,15 @@ class Wiki(Thread):
         self.wiki_q = wiki_q
 
     def display_alternate_articles(self, content):
-        a_tags = content.findAll("a")
+        a_tags = content.findAll('a')
         for tag in a_tags:
-            self.prefix_line("Server")
-            tag_line = "[%d] -- %s\n" % (a_tags.index(tag) + 1, tag['href'])
+            self.prefix_line('Server')
+            tag_line = '{} -- {}\n'.format(a_tags.index(tag) + 1, tag['href'])
             self.window.insert(END, tag_line)
             self.window.see(END)
-        self.prefix_line("Server")
-        self.window.insert(END, "Do you want to do a look-up on any of these?\n")
-        self.prefix_line("Server")
+        self.prefix_line('Server')
+        self.window.insert(END, 'Do you want to do a look-up on any of these?\n')
+        self.prefix_line('Server')
         self.window.insert(END, "Enter '/WHATIS #from_above' or '/WHATIS n'\n")
         self.window.see(END)
         return self.select_alternate_article(a_tags)
@@ -69,8 +69,8 @@ class Wiki(Thread):
             return p_tags
 
     def display_eof(self):
-        self.prefix_line("Server")
-        self.window.insert(END, "End of File\n")
+        self.prefix_line('Server')
+        self.window.insert(END, 'End of File\n')
         self.window.see(END)
         self.client.search = False
 
@@ -80,15 +80,15 @@ class Wiki(Thread):
         if page_content is None:
             self.client.search = False
         while self.client.search:
-            self.prefix_line("Server")
-            self.window.insert(END, page_content[page].text + '\n')
+            self.prefix_line('Server')
+            self.window.insert(END, '{}\n'.format(page_content[page].text))
             self.window.see(END)
             if page == len(page_content) - 1:
                 self.display_eof()
                 self.client.search = False
             else:
-                self.prefix_line("Server")
-                self.window.insert(END, "More? (y or n)\n")
+                self.prefix_line('Server')
+                self.window.insert(END, 'More? (y or n)\n')
                 self.window.see(END)
                 expand = self.make_selection()
                 if expand == 'y':
