@@ -11,10 +11,10 @@ from lib import END
 
 class ChatSocket(object):
 
-    def __init__(self, host, port, screen):
+    def __init__(self, host, port, chat_window):
         self.host = host
         self.port = port
-        self.screen = screen
+        self.chat_window = chat_window
         self.chat_client_socket = socket(AF_INET, SOCK_STREAM)
         self.chat_client_socket.connect((self.host, self.port))
         self.chat_client_socket.settimeout(3) # XXX connection timesout on bad shutdowns/restarts
@@ -50,16 +50,15 @@ class ChatSocket(object):
     def _error_response(self, error):
         retry = False
         if error == errno.EPIPE: 
-            chat_screen_errmsg = 'Error: Broken Pipe'
+            chat_chat_window_errmsg = 'Error: Broken Pipe'
         elif error == errno.ENOTCONN:
-            chat_screen_errmsg = 'Error: Transport end not Connected'
+            chat_chat_window_errmsg = 'Error: Transport end not Connected'
         elif error == errno.ETIMEDOUT:
-            chat_screen_errmsg = 'Error: Connection Timed out...retrying'
+            chat_chat_window_errmsg = 'Error: Connection Timed out...retrying'
             retry = True
         else:
-            chat_screen_errmsg = 'Error: %d' % error
-        self.screen.insert(END, chat_screen_errmsg)
-        self.screen.see(END)
+            chat_chat_window_errmsg = 'Error: %d' % error
+        self.chat_window._insert('Server', chat_chat_window_errmsg)
         if retry:
             self.sendall(self.msg)
 
