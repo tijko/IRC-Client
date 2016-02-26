@@ -17,11 +17,11 @@ from lib import END
 
 class Wiki(Thread):
 
-    def __init__(self, client, window, prefix, query, wiki_q):
+    def __init__(self, client, chat_window, query, wiki_q):
         super(Wiki, self).__init__()
         self.wiki_url = 'http://en.wikipedia.org/w/index.php?action=render&title='
         self.client = client
-        self.window = window
+        self.chat_window = chat_window
         self.prefix_line = prefix
         self.query = query
         self.wiki_q = wiki_q
@@ -29,15 +29,10 @@ class Wiki(Thread):
     def display_alternate_articles(self, content):
         a_tags = content.findAll('a')
         for tag in a_tags:
-            self.prefix_line('Server')
             tag_line = '{} -- {}\n'.format(a_tags.index(tag) + 1, tag['href'])
-            self.window.insert(END, tag_line)
-            self.window.see(END)
-        self.prefix_line('Server')
-        self.window.insert(END, 'Do you want to do a look-up on any of these?\n')
-        self.prefix_line('Server')
-        self.window.insert(END, "Enter '/WHATIS #from_above' or '/WHATIS n'\n")
-        self.window.see(END)
+            self.chat_window._insert('Server', tag_line)
+        self.chat_window._insert('Server', 'Do you want to do a look-up on any of these?\n')
+        self.chat_window._insert('Server', "Enter '/WHATIS #from_above' or '/WHATIS n'\n")
         return self.select_alternate_article(a_tags)
 
     def select_alternate_article(self, links):
@@ -69,9 +64,7 @@ class Wiki(Thread):
             return p_tags
 
     def display_eof(self):
-        self.prefix_line('Server')
-        self.window.insert(END, 'End of File\n')
-        self.window.see(END)
+        self.chat_window._insert('Server', 'End of File\n')
         self.client.search = False
 
     def run(self):
@@ -80,16 +73,12 @@ class Wiki(Thread):
         if page_content is None:
             self.client.search = False
         while self.client.search:
-            self.prefix_line('Server')
-            self.window.insert(END, '{}\n'.format(page_content[page].text))
-            self.window.see(END)
+            self.chat_window._insert('Server', '{}\n'.format(page_content[page].text))
             if page == len(page_content) - 1:
                 self.display_eof()
                 self.client.search = False
             else:
-                self.prefix_line('Server')
-                self.window.insert(END, 'More? (y or n)\n')
-                self.window.see(END)
+                self.chat_window._insert('Server', 'More? (y or n)\n')
                 expand = self.make_selection()
                 if expand == 'y':
                     page += 1
