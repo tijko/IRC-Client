@@ -622,7 +622,7 @@ class ChatWindow(Text):
         self.scrollbar = scrollbar
         self.fg_color = 'black'
         self.config(bg=self.fg_color, fg='green2')
-        self.config(font=('incolsolata', 10), wrap=WORD)
+        self.config(wrap=WORD)
         self.config(yscrollcommand=self.scrollbar.set)
         self.grid(row=0, column=0, stick=N+S+E+W)
         self.bg_color = {'server':'gold', 'user':'turquoise1', 
@@ -630,7 +630,7 @@ class ChatWindow(Text):
                          'directed':'violetred1', 'private':'purple',
                          'leave':'royal blue'}
 
-    def _insert(self, name, message, state=None): # every _insert may not need a prefix
+    def _insert(self, name, message, state=None):
         self.config(state=NORMAL)
         if isinstance(name, str):
             self.prefix(name, state)
@@ -640,10 +640,9 @@ class ChatWindow(Text):
         self.config(state=DISABLED)
 
     def prefix(self, name, state=None):   
-        pos = float(self.index(END)) - 1
-        startp = str(pos)
-        endp = str(pos + 0.16)
-        prefix_name = '{}{}| '.format(name, ' ' * (16 - len(name)))
+        startp = float(self.index(END)) - 1
+        endp = float(self.index(END)) - 0.84
+        prefix_name = '{:<16}| '.format(name)
         self.insert(END, prefix_name)
         if name == 'Server':
             prefix_name_tag = state = name.lower()
@@ -654,4 +653,3 @@ class ChatWindow(Text):
         self.tag_add(prefix_name_tag, startp, endp)
         self.tag_config(prefix_name_tag, background=self.bg_color[state],
                                          foreground=self.fg_color)
-        self.see(END)
