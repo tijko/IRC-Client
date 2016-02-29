@@ -524,8 +524,8 @@ class Client(object):
             new_msg = 'left --> {}\n'.format(chan)
             self.chat_window._insert(user, new_msg, 'leave')
 
-    def parse_msg(self, token):
-        if token.startswith('http'):
+    def parse_msg(self, token): # XXX move to ChatWindow
+        if token.startswith('http') or token.startswith('https'):
             self.chat_window.tag_config(token, underline=1)
             self.chat_window.tag_bind(token, '<Enter>', 
                                    lambda e: self.chat_window.config(cursor='hand2'))
@@ -533,8 +533,8 @@ class Client(object):
                                    lambda e: self.chat_window.config(cursor=''))
             self.chat_window.tag_bind(token, '<Button-1>', 
                                    lambda e: self.open_link(e))
-            self.chat_window._insert(0, token)
-            self.chat_window._insert(0, ' ')
+            self.chat_window.insert(END, token, token)
+            self.chat_window.insert(END, ' ')
         else:
             try: # XXX catch unicode
                 self.chat_window._insert(0, '{} '.format(token))
@@ -624,6 +624,7 @@ class ChatWindow(Text):
         self.config(bg=self.fg_color, fg='green2')
         self.config(wrap=WORD)
         self.config(yscrollcommand=self.scrollbar.set)
+        self.bind('<Key>', lambda e: 'break')
         self.grid(row=0, column=0, stick=N+S+E+W)
         self.bg_color = {'server':'gold', 'user':'turquoise1', 
                          'response':'green2', 'enter':'red2',
@@ -631,13 +632,11 @@ class ChatWindow(Text):
                          'leave':'royal blue'}
 
     def _insert(self, name, message, state=None):
-        self.config(state=NORMAL)
         if isinstance(name, str):
             self.prefix(name, state)
         self.insert(END, message)
         if self.scrollbar.get()[1] == 1.0:
             self.see(END)
-        self.config(state=DISABLED)
 
     def prefix(self, name, state=None):   
         startp = float(self.index(END)) - 1
