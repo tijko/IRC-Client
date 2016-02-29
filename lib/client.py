@@ -524,27 +524,11 @@ class Client(object):
             new_msg = 'left --> {}\n'.format(chan)
             self.chat_window._insert(user, new_msg, 'leave')
 
-    def parse_msg(self, token): # XXX move to ChatWindow
-        if token.startswith('http') or token.startswith('https'):
-            self.chat_window.tag_config(token, underline=1)
-            self.chat_window.tag_bind(token, '<Enter>', 
-                                   lambda e: self.chat_window.config(cursor='hand2'))
-            self.chat_window.tag_bind(token, '<Leave>', 
-                                   lambda e: self.chat_window.config(cursor=''))
-            self.chat_window.tag_bind(token, '<Button-1>', 
-                                   lambda e: self.open_link(e))
-            self.chat_window.insert(END, token, token)
-            self.chat_window.insert(END, ' ')
-        else:
-            try: # XXX catch unicode
-                self.chat_window._insert(0, '{} '.format(token))
-            except TclError:
-                self.chat_window._insert(0, '~unicodeErr? ')
-
-    def open_link(self, tk_event):
-        link = self.chat_window.tag_names(CURRENT)[0]
-        firefox_ps = subprocess.Popen(['firefox', link])
-        firefox_ps.wait()
+    def parse_msg(self, token):
+        try: # XXX catch unicode
+            self.chat_window._insert(0, '{} '.format(token))
+        except TclError:
+            self.chat_window._insert(0, '~unicodeErr? ')
 
     def chat_msg(self, channel, user, msg):
         if msg[0] == self.nick and channel != self.nick:
@@ -634,9 +618,29 @@ class ChatWindow(Text):
     def _insert(self, name, message, state=None):
         if isinstance(name, str):
             self.prefix(name, state)
-        self.insert(END, message)
+        if message.startswith('http') or message.startswith('https'):
+            self.hyperlink(message)
+        else:
+            self.insert(END, message)
         if self.scrollbar.get()[1] == 1.0:
             self.see(END)
+
+    def open_link(self, tk_event):
+        link = self.tag_names(CURRENT)[0]
+        firefox_ps = subprocess.Popen(['firefox', link])
+        firefox_ps.wait()
+
+    def hyperlink(self, token):
+        token = token.strip()
+        self.tag_config(token, underline=1)
+        self.tag_bind(token, '<Enter>', 
+                               lambda e: self.config(cursor='hand2'))
+        self.tag_bind(token, '<Leave>', 
+                               lambda e: self.config(cursor=''))
+        self.tag_bind(token, '<Button-1>', 
+                               lambda e: self.open_link(e))
+        self.insert(END, token, token)
+        self.insert(END, ' ')
 
     def prefix(self, name, state=None):   
         startp = float(self.index(END)) - 1
