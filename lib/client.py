@@ -642,7 +642,8 @@ class ChatWindow(Text):
         self.insert(END, token, token)
         self.insert(END, ' ')
 
-    def prefix(self, name, state=None):   
+    def prefix(self, name, state=None):
+        name = name[:16]
         startp = float(self.index(END)) - 1
         endp = float(self.index(END)) - 0.84
         prefix_name = '{:<16}| '.format(name)
